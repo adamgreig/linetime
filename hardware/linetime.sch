@@ -1,0 +1,104 @@
+EESchema Schematic File Version 2
+LIBS:agg-kicad
+LIBS:linetime-cache
+EELAYER 25 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 6
+Title "Linetime"
+Date "2016-12-08"
+Rev "1"
+Comp ""
+Comment1 "Drawn By: Adam Greig"
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Sheet
+S 6700 850  1100 800 
+U 5849DAC9
+F0 "linetime_mains" 50
+F1 "linetime_mains.sch" 50
+F2 "MAINS_BIAS" O L 6700 900 40 
+F3 "MAINS" O L 6700 1000 40 
+F4 "MAINS_ZC" O L 6700 1100 40 
+F5 "MAINS_5V" O L 6700 1200 40 
+$EndSheet
+$Sheet
+S 6700 1850 1100 800 
+U 584A8309
+F0 "linetime_gps" 50
+F1 "linetime_gps.sch" 50
+F2 "GPS_RXD" I L 6700 1900 40 
+F3 "GPS_TXD" O L 6700 2000 40 
+F4 "GPS_~RESET" I L 6700 2100 40 
+F5 "GPS_PPS" O L 6700 2200 40 
+F6 "CS2100_CLK" O L 6700 2300 40 
+F7 "CS2100_SDA" B L 6700 2400 40 
+F8 "CS2100_SCL" O L 6700 2500 40 
+$EndSheet
+$Sheet
+S 6700 2850 1100 800 
+U 584B4945
+F0 "linetime_ethernet" 50
+F1 "linetime_ethernet.sch" 50
+F2 "RXD1" O L 6700 2900 40 
+F3 "RXD0" O L 6700 3000 40 
+F4 "CRS_DV" O L 6700 3100 40 
+F5 "REF_CLK" O L 6700 3200 40 
+F6 "TXEN" I L 6700 3300 40 
+F7 "TXDO0" I L 6700 3400 40 
+F8 "TXD1" I L 6700 3500 40 
+F9 "MDIO" B L 6700 3600 40 
+F10 "MDC" I R 7800 3600 40 
+F11 "POE_5V" O R 7800 3500 40 
+$EndSheet
+$Comp
+L 25AA02E48 IC?
+U 1 1 584B1446
+P 3050 3250
+F 0 "IC?" H 2850 3550 50  0000 L CNN
+F 1 "25AA02E48" H 2850 2950 50  0000 L CNN
+F 2 "agg:SOT-23-6" H 2850 2850 50  0001 L CNN
+F 3 "http://ww1.microchip.com/downloads/en/DeviceDoc/20002123F.pdf" H 2850 2750 50  0001 L CNN
+F 4 "1700995" H 2850 2650 50  0001 L CNN "Farnell"
+	1    3050 3250
+	1    0    0    -1  
+$EndComp
+$Comp
+L SWD P?
+U 1 1 584B14D6
+P 3000 4050
+F 0 "P?" H 2600 4350 50  0000 L CNN
+F 1 "SWD" H 2600 3750 50  0000 L CNN
+F 2 "agg:FTSH-105-01-F-D-K" H 2600 3650 50  0001 L CNN
+F 3 "" H 3350 3850 50  0001 C CNN
+F 4 "FTSH-105-01-F-D-K" H 2600 3550 50  0001 L CNN "Toby"
+	1    3000 4050
+	1    0    0    -1  
+$EndComp
+$Comp
+L SWD_TC P?
+U 1 1 584B1550
+P 3000 4900
+F 0 "P?" H 2700 5100 50  0000 L CNN
+F 1 "SWD_TC" H 2700 4700 50  0000 L CNN
+F 2 "agg:TC2030-NL" H 2700 4600 50  0001 L CNN
+F 3 "" H 2600 5000 50  0001 C CNN
+	1    3000 4900
+	1    0    0    -1  
+$EndComp
+$Sheet
+S 6700 3850 1100 800 
+U 584B6CE2
+F0 "linetime_battery" 50
+F1 "linetime_battery.sch" 50
+$EndSheet
+$Sheet
+S 6700 4850 1100 800 
+U 584B8DDF
+F0 "linetime_ui" 50
+F1 "linetime_ui.sch" 50
+$EndSheet
+$EndSCHEMATC
