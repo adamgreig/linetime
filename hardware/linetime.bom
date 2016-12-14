@@ -1,0 +1,218 @@
+Bill Of Materials
+=================
+
+Source file: linetime.xml
+Date: 2016-12-14T07:50:38.205042
+
+Parts Missing Footprints
+------------------------
+X201   FUSEHOLDER     
+
+Parts Missing Order Codes
+-------------------------
+P102   SWD_TC          agg:TC2030-NL
+C122   1µ              agg:0603
+C121   10n             agg:0603
+C120   1µ              agg:0603
+C123   100n            agg:0603
+R109   10k             agg:0603
+R104   47k             agg:0603
+R107   47k             agg:0603
+R105   47k             agg:0603
+R108   47k             agg:0603
+R106   47k             agg:0603
+C119   100n            agg:0603
+C118   2µ2             agg:0603
+C117   2µ2             agg:0603
+C103   4µ7             agg:0603
+C101   100n            agg:0603
+C105   100n            agg:0603
+C109   100n            agg:0603
+C112   100n            agg:0603
+C115   100n            agg:0603
+C102   100n            agg:0603
+C106   100n            agg:0603
+C110   100n            agg:0603
+C113   100n            agg:0603
+C116   100n            agg:0603
+C107   100n            agg:0603
+C108   100n            agg:0603
+C104   1µ              agg:0603
+C111   100n            agg:0603
+C114   100n            agg:0603
+D101   LED             agg:0603-LED
+R101   1k              agg:0603
+D102   LED             agg:0603-LED
+R102   1k              agg:0603
+D103   LED             agg:0603-LED
+R103   1k              agg:0603
+C211   100n            agg:0603
+C208   100n            agg:0603
+C209   100n            agg:0603
+C207   ~               agg:0603
+L202   ~               agg:0603
+R204   DNS             agg:0603
+R203   DNS             agg:0603
+C212   10n             agg:0603
+C210   100n            agg:0603
+C206   1µ              agg:0603
+C205   10n             agg:0603
+C204   1µ              agg:0603
+IC303  MAX-M8Q         agg:MAX-M8Q
+R302   10              agg:0603
+L301   27n             agg:0603
+C308   10n             agg:0603
+C307   100n            agg:0603
+C306   100n            agg:0603
+C304   1n              agg:0603
+C301   10n             agg:0603
+C302   1µ              agg:0603
+C303   100n            agg:0603
+R301   1M              agg:0603
+C305   100n            agg:0603
+R404   33              agg:0603
+R407   33              agg:0603
+R405   33              agg:0603
+R408   33              agg:0603
+R406   6k49            agg:0603
+R409   1k              agg:0603
+R410   10k             agg:0603
+C412   10µ             agg:0603
+C410   30p             agg:0603
+C409   30p             agg:0603
+C411   100n            agg:0603
+C408   2µ2             agg:0603
+C402   22µ             agg:0603
+C405   100n            agg:0603
+C406   22µ             agg:0603
+C407   100n            agg:0603
+C403   100n            agg:0603
+C404   100n            agg:0603
+R401   1k              agg:0603
+C401   1n 2kV          agg:0805
+J501   BATT            agg:B02B-PASK
+C503   4µ7             agg:0603
+R501   4k32            agg:0603
+C502   4µ7             agg:0603
+R504   100k            agg:0603
+R505   100k            agg:0603
+R503   10k             agg:0603
+C501   4µ7             agg:0603
+R502   DNS             agg:0603
+C601   10µ             agg:0603
+C602   100n            agg:0603
+C603   100n            agg:0603
+R601   1k              agg:0603
+R602   1k              agg:0603
+R603   110k            agg:0603
+R604   110k            agg:0603
+C606   47n             agg:0603
+C604   47n             agg:0603
+C605   10µ             agg:0603
+C607   100n            agg:0603
+R606   10k             agg:0603
+R605   20k             agg:0603
+C608   10µ             agg:0603
+C609   100n            agg:0603
+C610   10n             agg:0603
+C611   10n             agg:0603
+
+Inconsistent Order Codes
+------------------------
+
+
+Vendor Specific BOMs
+--------------------
+  Toby
+  ~~~~
+FTSH-105-01-F-D-K,1,1x P101 FTSH-105-01-F-D-K
+
+
+  BuyDisplay
+  ~~~~~~~~~~
+ER-TFT023-1,1,1x IC601 ER-CON50HT-1
+
+
+  Mouser
+  ~~~~~~
+777-CS2100CP-CZZ,1,1x IC304 MSOP-10
+
+
+  Farnell
+  ~~~~~~~
+1331025,1,1x ADCMP601 SC-70-6
+2069541,1,1x NFET SOT-23
+2218568,1,1x AR1021 SSOP-20
+1502738,1,1x KSSG1708 KSSG1708
+1517985,1,1x FUSED INLET DD21.01xx.1111
+1203390,1,1x 1k/1k SOT-23
+2358234,1,1x MICROSD MICROSD_MOLEX_50339
+2325454,1,1x 1k/5k SOT-23
+1794973,4,4x ~ SOD-123
+2368169,5,5x ESD_DIODE 0402
+1144906,1,1x FUSEHOLDER None
+2059571,2,2x 75 0603
+2576286,1,1x BQ24232HA QFN-16-EP-TI
+1466524,1,1x 1N4148 SOD-323
+1568023,1,1x MICROUSB MICROUSB_MOLEX_475
+2535499,1,1x STM32F7xxZxTx LQFP-144
+1417667,1,1x NC7SZ04 SOT-23-5
+1669708,2,2x FB 0603
+2395807,2,2x Y2 B32921
+2101328,1,1x XTAL XTAL-50x32
+2213573,1,1x ADA4528-2 MSOP-8
+1131455,1,1x AVB0.35/2/6 AVB0.35_2_X
+1295310,1,1x USBLC6-2P6 SOT-666
+2422553,1,1x 749013011A 749010012A
+2401030,1,1x VTX-214-003-105 VTX-214-003
+1462758,1,1x RJHSE-5381 RJHSE-538X
+2074853,1,1x SSM2305 MSOP-8
+2112448,1,1x COAX SMA-PTH
+2067775,2,2x ADP3335 MSOP-8
+2509802,1,1x KSZ8081RNx QFN-24-EP-MICREL
+2405785,1,1x 26M TCXO TG-5006CG
+2112770,1,1x X2 B32921
+1700995,1,1x 25AA02E48 SOT-23-6
+2376932,1,1x ADP3335 MSOP-8
+
+
+Assembly BOM
+------------
+FTSH-105-01-F-D-K    1   SWD             FTSH-105-01-F-D-K P101
+ER-TFT023-1          1   ER-TFT023-1     ER-CON50HT-1    IC601
+777-CS2100CP-CZZ     1   CS2100-CP       MSOP-10         IC304
+1331025              1   ADCMP601        SC-70-6         IC203
+2069541              1   NFET            SOT-23          Q601
+2218568              1   AR1021          SSOP-20         IC603
+1502738              1   KSSG1708        KSSG1708        LS601
+1517985              1   FUSED INLET     DD21.01xx.1111  J201
+1203390              1   1k/1k           SOT-23          R202
+2358234              1   MICROSD         MICROSD_MOLEX_503398-1892 U101
+2325454              1   1k/5k           SOT-23          R201
+1794973              4   ~               SOD-123         D601 D602 D603 D604
+2368169              5   ESD_DIODE       0402            D301 D605 D606 D607 D608
+1144906              1   FUSEHOLDER      None            X201
+2059571              2   75              0603            R402 R403
+2576286              1   BQ24232HA       QFN-16-EP-TI    IC501
+1466524              1   1N4148          SOD-323         D401
+1568023              1   MICROUSB        MICROUSB_MOLEX_47589-0001 J101
+2535499              1   STM32F7xxZxTx   LQFP-144        IC101
+1417667              1   NC7SZ04         SOT-23-5        IC302
+1669708              2   FB              0603            L201 L401
+2395807              2   Y2              B32921          C201 C202
+2101328              1   XTAL            XTAL-50x32      Y401
+2213573              1   ADA4528-2       MSOP-8          IC204
+1131455              1   AVB0.35/2/6     AVB0.35_2_X     T201
+1295310              1   USBLC6-2P6      SOT-666         D104
+2422553              1   749013011A      749010012A      T401
+2401030              1   VTX-214-003-105 VTX-214-003-1xx IC201
+1462758              1   RJHSE-5381      RJHSE-538X      IC401
+2074853              1   SSM2305         MSOP-8          IC602
+2112448              1   COAX            SMA-PTH         P301
+2067775              2   ADP3335         MSOP-8          IC102 IC202
+2509802              1   KSZ8081RNx      QFN-24-EP-MICREL IC402
+2405785              1   26M TCXO        TG-5006CG       Y301
+2112770              1   X2              B32921          C203
+1700995              1   25AA02E48       SOT-23-6        IC103
+2376932              1   ADP3335         MSOP-8          IC301
+
