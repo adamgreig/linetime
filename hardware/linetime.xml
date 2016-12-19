@@ -2,7 +2,7 @@
 <export version="D">
   <design>
     <source>/home/adam/Projects/linetime/hardware/linetime.sch</source>
-    <date>Wed 14 Dec 2016 07:50:37 GMT</date>
+    <date>Mon 19 Dec 2016 06:56:59 GMT</date>
     <tool>Eeschema 201609280951+7255~55~ubuntu14.04.1-</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -105,24 +105,6 @@
       <sheetpath names="/" tstamps="/"/>
       <tstamp>584B14D6</tstamp>
     </comp>
-    <comp ref="P102">
-      <value>SWD_TC</value>
-      <footprint>agg:TC2030-NL</footprint>
-      <libsource lib="agg-kicad" part="SWD_TC"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamp>584B1550</tstamp>
-    </comp>
-    <comp ref="J101">
-      <value>MICROUSB</value>
-      <footprint>agg:MICROUSB_MOLEX_47589-0001</footprint>
-      <datasheet>http://www.farnell.com/cad/1597783.pdf</datasheet>
-      <fields>
-        <field name="Farnell">1568023</field>
-      </fields>
-      <libsource lib="agg-kicad" part="MICROUSB"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamp>584BB76A</tstamp>
-    </comp>
     <comp ref="U101">
       <value>MICROSD</value>
       <footprint>agg:MICROSD_MOLEX_503398-1892</footprint>
@@ -163,20 +145,6 @@
       <libsource lib="agg-kicad" part="C"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamp>584C9AF5</tstamp>
-    </comp>
-    <comp ref="C123">
-      <value>100n</value>
-      <footprint>agg:0603</footprint>
-      <libsource lib="agg-kicad" part="C"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamp>584D35FD</tstamp>
-    </comp>
-    <comp ref="R109">
-      <value>10k</value>
-      <footprint>agg:0603</footprint>
-      <libsource lib="agg-kicad" part="R"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamp>584D618A</tstamp>
     </comp>
     <comp ref="R104">
       <value>47k</value>
@@ -219,17 +187,6 @@
       <libsource lib="agg-kicad" part="C"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamp>584B90B3</tstamp>
-    </comp>
-    <comp ref="D104">
-      <value>USBLC6-2P6</value>
-      <footprint>agg:SOT-666</footprint>
-      <datasheet>http://www.st.com/resource/en/datasheet/usblc6-2.pdf</datasheet>
-      <fields>
-        <field name="Farnell">1295310</field>
-      </fields>
-      <libsource lib="agg-kicad" part="USBLC6-2P6"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamp>584BF884</tstamp>
     </comp>
     <comp ref="IC101">
       <value>STM32F7xxZxTx</value>
@@ -518,7 +475,7 @@
       <tstamp>584A15E0</tstamp>
     </comp>
     <comp ref="C209">
-      <value>100n</value>
+      <value>10n</value>
       <footprint>agg:0603</footprint>
       <libsource lib="agg-kicad" part="C"/>
       <sheetpath names="/linetime_mains/" tstamps="/5849DAC9/"/>
@@ -546,18 +503,11 @@
       <tstamp>584A19D7</tstamp>
     </comp>
     <comp ref="C207">
-      <value>~</value>
+      <value>1n</value>
       <footprint>agg:0603</footprint>
       <libsource lib="agg-kicad" part="C"/>
       <sheetpath names="/linetime_mains/" tstamps="/5849DAC9/"/>
       <tstamp>584A3157</tstamp>
-    </comp>
-    <comp ref="L202">
-      <value>~</value>
-      <footprint>agg:0603</footprint>
-      <libsource lib="agg-kicad" part="L"/>
-      <sheetpath names="/linetime_mains/" tstamps="/5849DAC9/"/>
-      <tstamp>584A36DD</tstamp>
     </comp>
     <comp ref="IC203">
       <value>ADCMP601</value>
@@ -628,6 +578,20 @@
       <libsource lib="agg-kicad" part="C"/>
       <sheetpath names="/linetime_mains/" tstamps="/5849DAC9/"/>
       <tstamp>584B397D</tstamp>
+    </comp>
+    <comp ref="R205">
+      <value>33</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="R"/>
+      <sheetpath names="/linetime_mains/" tstamps="/5849DAC9/"/>
+      <tstamp>5852D944</tstamp>
+    </comp>
+    <comp ref="R206">
+      <value>100</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="R"/>
+      <sheetpath names="/linetime_mains/" tstamps="/5849DAC9/"/>
+      <tstamp>58590EF7</tstamp>
     </comp>
     <comp ref="IC303">
       <value>MAX-M8Q</value>
@@ -777,6 +741,34 @@
       <sheetpath names="/linetime_gps/" tstamps="/584A8309/"/>
       <tstamp>584C3F4D</tstamp>
     </comp>
+    <comp ref="C309">
+      <value>1µ</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="C"/>
+      <sheetpath names="/linetime_gps/" tstamps="/584A8309/"/>
+      <tstamp>5853400D</tstamp>
+    </comp>
+    <comp ref="R1">
+      <value>10k</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="R"/>
+      <sheetpath names="/linetime_gps/" tstamps="/584A8309/"/>
+      <tstamp>585522CD</tstamp>
+    </comp>
+    <comp ref="R2">
+      <value>10k</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="R"/>
+      <sheetpath names="/linetime_gps/" tstamps="/584A8309/"/>
+      <tstamp>58552749</tstamp>
+    </comp>
+    <comp ref="R303">
+      <value>33</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="R"/>
+      <sheetpath names="/linetime_gps/" tstamps="/584A8309/"/>
+      <tstamp>585650F7</tstamp>
+    </comp>
     <comp ref="IC402">
       <value>KSZ8081RNx</value>
       <footprint>agg:QFN-24-EP-MICREL</footprint>
@@ -841,29 +833,12 @@
       <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
       <tstamp>584B9D5B</tstamp>
     </comp>
-    <comp ref="D401">
-      <value>1N4148</value>
-      <footprint>agg:SOD-323</footprint>
-      <fields>
-        <field name="Farnell">1466524</field>
-      </fields>
-      <libsource lib="agg-kicad" part="D"/>
-      <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
-      <tstamp>584B9F3E</tstamp>
-    </comp>
     <comp ref="R410">
       <value>10k</value>
       <footprint>agg:0603</footprint>
       <libsource lib="agg-kicad" part="R"/>
       <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
       <tstamp>584B9FA9</tstamp>
-    </comp>
-    <comp ref="C412">
-      <value>10µ</value>
-      <footprint>agg:0603</footprint>
-      <libsource lib="agg-kicad" part="C"/>
-      <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
-      <tstamp>584BA030</tstamp>
     </comp>
     <comp ref="Y401">
       <value>XTAL</value>
@@ -984,7 +959,10 @@
     </comp>
     <comp ref="C401">
       <value>1n 2kV</value>
-      <footprint>agg:0805</footprint>
+      <footprint>agg:1206</footprint>
+      <fields>
+        <field name="Farnell">1855909</field>
+      </fields>
       <libsource lib="agg-kicad" part="C"/>
       <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
       <tstamp>584C55E5</tstamp>
@@ -1000,6 +978,27 @@
       <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
       <tstamp>584B6674</tstamp>
     </comp>
+    <comp ref="R411">
+      <value>33</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="R"/>
+      <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
+      <tstamp>585723B1</tstamp>
+    </comp>
+    <comp ref="R413">
+      <value>33</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="R"/>
+      <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
+      <tstamp>58572479</tstamp>
+    </comp>
+    <comp ref="R412">
+      <value>33</value>
+      <footprint>agg:0603</footprint>
+      <libsource lib="agg-kicad" part="R"/>
+      <sheetpath names="/linetime_ethernet/" tstamps="/584B4945/"/>
+      <tstamp>585724EB</tstamp>
+    </comp>
     <comp ref="IC501">
       <value>BQ24232HA</value>
       <footprint>agg:QFN-16-EP-TI</footprint>
@@ -1013,7 +1012,7 @@
     </comp>
     <comp ref="J501">
       <value>BATT</value>
-      <footprint>agg:B02B-PASK</footprint>
+      <footprint>agg:S02B-PASK-2</footprint>
       <libsource lib="agg-kicad" part="CONN_01x02"/>
       <sheetpath names="/linetime_battery/" tstamps="/584B6CE2/"/>
       <tstamp>584C06E2</tstamp>
@@ -1742,22 +1741,6 @@
         <pin num="11" name="CD_S" type="passive"/>
       </pins>
     </libpart>
-    <libpart lib="agg-kicad" part="MICROUSB">
-      <fields>
-        <field name="Reference">J</field>
-        <field name="Value">MICROUSB</field>
-        <field name="Footprint">agg:MICROUSB_MOLEX_47589-0001</field>
-        <field name="Farnell">1568023</field>
-      </fields>
-      <pins>
-        <pin num="1" name="VCC" type="power_out"/>
-        <pin num="2" name="D-" type="BiDi"/>
-        <pin num="3" name="D+" type="BiDi"/>
-        <pin num="4" name="ID" type="passive"/>
-        <pin num="5" name="GND" type="power_in"/>
-        <pin num="S" name="SHIELD" type="passive"/>
-      </pins>
-    </libpart>
     <libpart lib="agg-kicad" part="NC7SZ04">
       <fields>
         <field name="Reference">IC</field>
@@ -2041,21 +2024,6 @@
         <pin num="10" name="nRESET" type="openCol"/>
       </pins>
     </libpart>
-    <libpart lib="agg-kicad" part="SWD_TC">
-      <fields>
-        <field name="Reference">P</field>
-        <field name="Value">SWD_TC</field>
-        <field name="Footprint">agg:TC2030-NL</field>
-      </fields>
-      <pins>
-        <pin num="1" name="VDD" type="power_in"/>
-        <pin num="2" name="SWDIO" type="BiDi"/>
-        <pin num="3" name="~RST" type="openCol"/>
-        <pin num="4" name="SWDCLK" type="output"/>
-        <pin num="5" name="GND" type="power_in"/>
-        <pin num="6" name="SWO" type="input"/>
-      </pins>
-    </libpart>
     <libpart lib="agg-kicad" part="TCXO">
       <fields>
         <field name="Reference">Y</field>
@@ -2083,23 +2051,6 @@
         <pin num="6" name="~" type="passive"/>
         <pin num="7" name="~" type="passive"/>
         <pin num="8" name="~" type="passive"/>
-      </pins>
-    </libpart>
-    <libpart lib="agg-kicad" part="USBLC6-2P6">
-      <fields>
-        <field name="Reference">D</field>
-        <field name="Value">USBLC6-2P6</field>
-        <field name="Footprint">agg:SOT-666</field>
-        <field name="Datasheet">http://www.st.com/resource/en/datasheet/usblc6-2.pdf</field>
-        <field name="Farnell">1295310</field>
-      </fields>
-      <pins>
-        <pin num="1" name="I/O1" type="passive"/>
-        <pin num="2" name="GND" type="power_in"/>
-        <pin num="3" name="I/O2" type="passive"/>
-        <pin num="4" name="I/O2" type="passive"/>
-        <pin num="5" name="VBUS" type="power_in"/>
-        <pin num="6" name="I/O1" type="passive"/>
       </pins>
     </libpart>
     <libpart lib="agg-kicad" part="VTX-214-003-1xx">
@@ -2134,1078 +2085,1072 @@
     </library>
   </libraries>
   <nets>
-    <net code="1" name="/DE">
-      <node ref="IC101" pin="66"/>
-      <node ref="IC601" pin="14"/>
-    </net>
-    <net code="2" name="/B5">
-      <node ref="IC601" pin="29"/>
-      <node ref="IC101" pin="37"/>
-    </net>
-    <net code="3" name="/B6">
-      <node ref="IC101" pin="139"/>
-      <node ref="IC601" pin="28"/>
-    </net>
-    <net code="4" name="/B7">
-      <node ref="IC601" pin="27"/>
-      <node ref="IC101" pin="140"/>
-    </net>
-    <net code="5" name="/G2">
-      <node ref="IC101" pin="42"/>
-      <node ref="IC601" pin="26"/>
-    </net>
-    <net code="6" name="/G3">
-      <node ref="IC601" pin="25"/>
-      <node ref="IC101" pin="64"/>
-    </net>
-    <net code="7" name="/G4">
-      <node ref="IC101" pin="69"/>
-      <node ref="IC601" pin="24"/>
-    </net>
-    <net code="8" name="/G5">
-      <node ref="IC601" pin="23"/>
-      <node ref="IC101" pin="70"/>
-    </net>
-    <net code="9" name="/G6">
-      <node ref="IC101" pin="97"/>
-      <node ref="IC601" pin="22"/>
-    </net>
-    <net code="10" name="/G7">
-      <node ref="IC101" pin="93"/>
-      <node ref="IC601" pin="21"/>
-    </net>
-    <net code="11" name="/R2">
-      <node ref="IC601" pin="20"/>
-      <node ref="IC101" pin="111"/>
-    </net>
-    <net code="12" name="/R3">
-      <node ref="IC101" pin="46"/>
-      <node ref="IC601" pin="19"/>
-    </net>
-    <net code="13" name="/R4">
-      <node ref="IC101" pin="103"/>
-      <node ref="IC601" pin="18"/>
-    </net>
-    <net code="14" name="/R5">
-      <node ref="IC601" pin="17"/>
-      <node ref="IC101" pin="104"/>
-    </net>
-    <net code="15" name="/R6">
-      <node ref="IC101" pin="47"/>
-      <node ref="IC601" pin="16"/>
-    </net>
-    <net code="16" name="/R7">
-      <node ref="IC601" pin="15"/>
-      <node ref="IC101" pin="68"/>
-    </net>
-    <net code="17" name="/nRST">
-      <node ref="P101" pin="10"/>
-      <node ref="P102" pin="3"/>
-      <node ref="IC101" pin="25"/>
-    </net>
-    <net code="18" name="/SWCLK">
-      <node ref="P102" pin="4"/>
-      <node ref="P101" pin="4"/>
-      <node ref="IC101" pin="109"/>
-    </net>
-    <net code="19" name="/SWDIO">
-      <node ref="IC101" pin="105"/>
-      <node ref="P102" pin="2"/>
-      <node ref="P101" pin="2"/>
-    </net>
-    <net code="20" name="/uSD_CLK">
-      <node ref="IC101" pin="113"/>
-      <node ref="U101" pin="5"/>
-    </net>
-    <net code="21" name="Net-(R108-Pad2)">
-      <node ref="U101" pin="2"/>
-      <node ref="R108" pin="2"/>
-    </net>
-    <net code="22" name="Net-(R105-Pad2)">
-      <node ref="U101" pin="1"/>
-      <node ref="R105" pin="2"/>
-    </net>
-    <net code="23" name="/USB_D-">
-      <node ref="IC101" pin="75"/>
-      <node ref="D104" pin="1"/>
-    </net>
-    <net code="24" name="/USB_D+">
-      <node ref="IC101" pin="76"/>
-      <node ref="D104" pin="3"/>
-    </net>
-    <net code="25" name="Net-(D104-Pad5)">
-      <node ref="J101" pin="1"/>
-      <node ref="D104" pin="5"/>
-      <node ref="R109" pin="1"/>
-    </net>
-    <net code="26" name="/B4">
-      <node ref="IC101" pin="65"/>
-      <node ref="IC601" pin="30"/>
-    </net>
-    <net code="27" name="Net-(D104-Pad4)">
-      <node ref="D104" pin="4"/>
-      <node ref="J101" pin="3"/>
-    </net>
-    <net code="28" name="Net-(D104-Pad6)">
-      <node ref="D104" pin="6"/>
-      <node ref="J101" pin="2"/>
-    </net>
-    <net code="29" name="/VUSB">
-      <node ref="IC101" pin="74"/>
-      <node ref="R109" pin="2"/>
-    </net>
-    <net code="30" name="GND">
-      <node ref="C120" pin="2"/>
-      <node ref="C101" pin="2"/>
-      <node ref="IC601" pin="50"/>
-      <node ref="IC101" pin="120"/>
-      <node ref="J101" pin="5"/>
-      <node ref="IC601" pin="48"/>
-      <node ref="IC101" pin="130"/>
-      <node ref="C103" pin="2"/>
-      <node ref="IC201" pin="4"/>
-      <node ref="IC204" pin="4"/>
-      <node ref="P102" pin="5"/>
-      <node ref="P101" pin="9"/>
-      <node ref="IC101" pin="94"/>
-      <node ref="C305" pin="2"/>
-      <node ref="IC601" pin="49"/>
-      <node ref="C603" pin="2"/>
-      <node ref="IC101" pin="83"/>
-      <node ref="D104" pin="2"/>
-      <node ref="IC101" pin="16"/>
-      <node ref="R202" pin="2"/>
-      <node ref="C602" pin="2"/>
-      <node ref="C601" pin="2"/>
-      <node ref="IC101" pin="107"/>
-      <node ref="IC103" pin="2"/>
-      <node ref="P101" pin="3"/>
-      <node ref="P101" pin="5"/>
-      <node ref="U101" pin="6"/>
-      <node ref="U101" pin="9"/>
-      <node ref="IC102" pin="4"/>
-      <node ref="IC101" pin="138"/>
-      <node ref="C122" pin="2"/>
-      <node ref="IC603" pin="7"/>
-      <node ref="IC603" pin="4"/>
-      <node ref="IC603" pin="3"/>
-      <node ref="C206" pin="2"/>
-      <node ref="C607" pin="2"/>
-      <node ref="C605" pin="2"/>
-      <node ref="C204" pin="2"/>
-      <node ref="IC603" pin="17"/>
-      <node ref="IC603" pin="14"/>
-      <node ref="IC603" pin="20"/>
-      <node ref="L201" pin="1"/>
-      <node ref="C209" pin="2"/>
-      <node ref="IC602" pin="7"/>
-      <node ref="C211" pin="2"/>
-      <node ref="C208" pin="2"/>
-      <node ref="C604" pin="1"/>
-      <node ref="IC202" pin="4"/>
-      <node ref="IC101" pin="38"/>
-      <node ref="Q601" pin="2"/>
-      <node ref="C118" pin="2"/>
-      <node ref="IC601" pin="43"/>
-      <node ref="C117" pin="2"/>
-      <node ref="IC401" pin="S"/>
-      <node ref="C503" pin="2"/>
-      <node ref="R406" pin="2"/>
-      <node ref="R501" pin="1"/>
-      <node ref="IC402" pin="22"/>
-      <node ref="C502" pin="2"/>
-      <node ref="IC501" pin="5"/>
-      <node ref="C610" pin="2"/>
-      <node ref="C611" pin="2"/>
-      <node ref="IC501" pin="8"/>
-      <node ref="D605" pin="2"/>
-      <node ref="C501" pin="2"/>
-      <node ref="C412" pin="2"/>
-      <node ref="C411" pin="1"/>
-      <node ref="C410" pin="2"/>
-      <node ref="C405" pin="1"/>
-      <node ref="R502" pin="1"/>
-      <node ref="C402" pin="1"/>
-      <node ref="C408" pin="1"/>
-      <node ref="R503" pin="1"/>
-      <node ref="C407" pin="1"/>
-      <node ref="IC501" pin="EP"/>
-      <node ref="C401" pin="2"/>
-      <node ref="IC402" pin="EP"/>
-      <node ref="J501" pin="1"/>
-      <node ref="C404" pin="2"/>
-      <node ref="C403" pin="2"/>
-      <node ref="C406" pin="1"/>
-      <node ref="R505" pin="2"/>
-      <node ref="C409" pin="2"/>
-      <node ref="IC302" pin="3"/>
-      <node ref="D301" pin="1"/>
-      <node ref="C302" pin="2"/>
-      <node ref="C303" pin="2"/>
-      <node ref="C608" pin="2"/>
-      <node ref="C609" pin="2"/>
-      <node ref="C308" pin="2"/>
-      <node ref="IC203" pin="2"/>
-      <node ref="R204" pin="2"/>
-      <node ref="C210" pin="2"/>
-      <node ref="C212" pin="2"/>
-      <node ref="IC301" pin="4"/>
-      <node ref="IC304" pin="2"/>
-      <node ref="C307" pin="2"/>
-      <node ref="C306" pin="2"/>
-      <node ref="IC303" pin="1"/>
-      <node ref="IC303" pin="10"/>
-      <node ref="IC303" pin="12"/>
-      <node ref="P301" pin="2"/>
-      <node ref="D606" pin="2"/>
-      <node ref="D607" pin="2"/>
-      <node ref="D608" pin="2"/>
-      <node ref="IC304" pin="8"/>
-      <node ref="Y301" pin="2"/>
-      <node ref="C123" pin="2"/>
-      <node ref="D101" pin="1"/>
-      <node ref="C104" pin="2"/>
-      <node ref="C111" pin="2"/>
-      <node ref="C102" pin="2"/>
-      <node ref="IC101" pin="61"/>
-      <node ref="C115" pin="2"/>
-      <node ref="C113" pin="2"/>
-      <node ref="C112" pin="2"/>
-      <node ref="IC101" pin="51"/>
-      <node ref="C109" pin="2"/>
-      <node ref="C105" pin="2"/>
-      <node ref="IC101" pin="31"/>
-      <node ref="C114" pin="2"/>
-      <node ref="D103" pin="1"/>
-      <node ref="C110" pin="2"/>
-      <node ref="D102" pin="1"/>
-      <node ref="C116" pin="2"/>
-      <node ref="C108" pin="2"/>
-      <node ref="C119" pin="2"/>
-      <node ref="C107" pin="2"/>
-      <node ref="C106" pin="2"/>
-    </net>
-    <net code="31" name="Net-(IC101-Pad24)">
-      <node ref="IC101" pin="24"/>
-    </net>
-    <net code="32" name="Net-(IC101-Pad73)">
-      <node ref="IC101" pin="73"/>
-    </net>
-    <net code="33" name="Net-(IC101-Pad137)">
-      <node ref="IC101" pin="137"/>
-    </net>
-    <net code="34" name="Net-(IC101-Pad136)">
-      <node ref="IC101" pin="136"/>
-    </net>
-    <net code="35" name="Net-(IC101-Pad135)">
-      <node ref="IC101" pin="135"/>
-    </net>
-    <net code="36" name="Net-(IC101-Pad134)">
-      <node ref="IC101" pin="134"/>
-    </net>
-    <net code="37" name="Net-(IC101-Pad102)">
-      <node ref="IC101" pin="102"/>
-    </net>
-    <net code="38" name="Net-(IC101-Pad101)">
-      <node ref="IC101" pin="101"/>
-    </net>
-    <net code="39" name="Net-(IC101-Pad100)">
-      <node ref="IC101" pin="100"/>
-    </net>
-    <net code="40" name="Net-(IC101-Pad34)">
-      <node ref="IC101" pin="34"/>
-    </net>
-    <net code="41" name="Net-(IC101-Pad26)">
-      <node ref="IC101" pin="26"/>
-    </net>
-    <net code="42" name="Net-(IC101-Pad99)">
-      <node ref="IC101" pin="99"/>
-    </net>
-    <net code="43" name="Net-(IC101-Pad112)">
-      <node ref="IC101" pin="112"/>
-    </net>
-    <net code="44" name="Net-(IC101-Pad7)">
-      <node ref="IC101" pin="7"/>
-    </net>
-    <net code="45" name="Net-(IC101-Pad8)">
-      <node ref="IC101" pin="8"/>
-    </net>
-    <net code="46" name="/LED1">
-      <node ref="R101" pin="1"/>
-      <node ref="IC101" pin="87"/>
-    </net>
-    <net code="47" name="Net-(D102-Pad2)">
-      <node ref="R102" pin="2"/>
-      <node ref="D102" pin="2"/>
-    </net>
-    <net code="48" name="/LED2">
-      <node ref="R102" pin="1"/>
-      <node ref="IC101" pin="88"/>
-    </net>
-    <net code="49" name="Net-(D103-Pad2)">
-      <node ref="D103" pin="2"/>
-      <node ref="R103" pin="2"/>
-    </net>
-    <net code="50" name="Net-(D101-Pad2)">
-      <node ref="R101" pin="2"/>
-      <node ref="D101" pin="2"/>
-    </net>
-    <net code="51" name="/LED3">
-      <node ref="IC101" pin="89"/>
-      <node ref="R103" pin="1"/>
-    </net>
-    <net code="52" name="/SOUNDER_~SD">
-      <node ref="IC602" pin="1"/>
-      <node ref="IC101" pin="48"/>
-      <node ref="R606" pin="2"/>
-    </net>
-    <net code="53" name="/TFT_DCX">
-      <node ref="IC101" pin="2"/>
-      <node ref="IC601" pin="36"/>
-    </net>
-    <net code="54" name="/TFT_~CS">
-      <node ref="IC101" pin="3"/>
-      <node ref="IC601" pin="38"/>
-    </net>
-    <net code="55" name="/TFT_SCL">
-      <node ref="IC601" pin="37"/>
-      <node ref="IC101" pin="1"/>
-    </net>
-    <net code="56" name="/TFT_RESET">
-      <node ref="IC601" pin="10"/>
-      <node ref="IC101" pin="4"/>
-    </net>
-    <net code="57" name="/TFT_SDA">
-      <node ref="R602" pin="2"/>
-      <node ref="IC101" pin="5"/>
-    </net>
-    <net code="58" name="/B2">
-      <node ref="IC101" pin="125"/>
-      <node ref="IC601" pin="32"/>
-    </net>
-    <net code="59" name="/B3">
-      <node ref="IC101" pin="79"/>
-      <node ref="IC601" pin="31"/>
-    </net>
-    <net code="60" name="Net-(IC101-Pad59)">
-      <node ref="IC101" pin="59"/>
-    </net>
-    <net code="61" name="Net-(IC101-Pad9)">
-      <node ref="IC101" pin="9"/>
-    </net>
-    <net code="62" name="Net-(IC101-Pad114)">
-      <node ref="IC101" pin="114"/>
-    </net>
-    <net code="63" name="Net-(IC101-Pad115)">
-      <node ref="IC101" pin="115"/>
-    </net>
-    <net code="64" name="Net-(IC101-Pad117)">
-      <node ref="IC101" pin="117"/>
-    </net>
-    <net code="65" name="Net-(IC101-Pad123)">
-      <node ref="IC101" pin="123"/>
-    </net>
-    <net code="66" name="Net-(IC101-Pad77)">
-      <node ref="IC101" pin="77"/>
-    </net>
-    <net code="67" name="Net-(IC101-Pad78)">
-      <node ref="IC101" pin="78"/>
-    </net>
-    <net code="68" name="Net-(IC101-Pad80)">
-      <node ref="IC101" pin="80"/>
-    </net>
-    <net code="69" name="Net-(IC101-Pad82)">
-      <node ref="IC101" pin="82"/>
-    </net>
-    <net code="70" name="Net-(IC101-Pad85)">
-      <node ref="IC101" pin="85"/>
-    </net>
-    <net code="71" name="Net-(IC101-Pad86)">
-      <node ref="IC101" pin="86"/>
-    </net>
-    <net code="72" name="Net-(IC101-Pad141)">
-      <node ref="IC101" pin="141"/>
-    </net>
-    <net code="73" name="Net-(IC101-Pad142)">
-      <node ref="IC101" pin="142"/>
-    </net>
-    <net code="74" name="Net-(IC101-Pad58)">
-      <node ref="IC101" pin="58"/>
-    </net>
-    <net code="75" name="Net-(R107-Pad2)">
-      <node ref="R107" pin="2"/>
-      <node ref="U101" pin="8"/>
-    </net>
-    <net code="76" name="Net-(IC101-Pad60)">
-      <node ref="IC101" pin="60"/>
-    </net>
-    <net code="77" name="Net-(IC101-Pad63)">
-      <node ref="IC101" pin="63"/>
-    </net>
-    <net code="78" name="Net-(IC101-Pad49)">
-      <node ref="IC101" pin="49"/>
-    </net>
-    <net code="79" name="Net-(IC101-Pad50)">
-      <node ref="IC101" pin="50"/>
-    </net>
-    <net code="80" name="Net-(IC101-Pad53)">
-      <node ref="IC101" pin="53"/>
-    </net>
-    <net code="81" name="Net-(IC101-Pad56)">
-      <node ref="IC101" pin="56"/>
-    </net>
-    <net code="82" name="Net-(IC101-Pad57)">
-      <node ref="IC101" pin="57"/>
-    </net>
-    <net code="83" name="Net-(IC101-Pad90)">
-      <node ref="IC101" pin="90"/>
-    </net>
-    <net code="84" name="Net-(IC101-Pad91)">
-      <node ref="IC101" pin="91"/>
-    </net>
-    <net code="85" name="Net-(IC101-Pad92)">
-      <node ref="IC101" pin="92"/>
-    </net>
-    <net code="86" name="Net-(IC101-Pad124)">
-      <node ref="IC101" pin="124"/>
-    </net>
-    <net code="87" name="Net-(IC101-Pad127)">
-      <node ref="IC101" pin="127"/>
-    </net>
-    <net code="88" name="Net-(IC101-Pad132)">
-      <node ref="IC101" pin="132"/>
-    </net>
-    <net code="89" name="/VSYNC">
-      <node ref="IC101" pin="40"/>
-      <node ref="IC601" pin="11"/>
-    </net>
-    <net code="90" name="/MAINS_BIAS">
-      <node ref="T201" pin="5"/>
-      <node ref="R201" pin="1"/>
-      <node ref="IC204" pin="7"/>
-      <node ref="IC204" pin="6"/>
-      <node ref="C208" pin="1"/>
-      <node ref="IC101" pin="29"/>
-      <node ref="IC203" pin="4"/>
-      <node ref="C207" pin="2"/>
-    </net>
-    <net code="91" name="/HSYNC">
-      <node ref="IC601" pin="12"/>
-      <node ref="IC101" pin="96"/>
-    </net>
-    <net code="92" name="/DOTCLK">
-      <node ref="IC601" pin="13"/>
-      <node ref="IC101" pin="67"/>
-    </net>
-    <net code="93" name="/CS2100_SDA">
-      <node ref="IC101" pin="55"/>
-      <node ref="IC304" pin="10"/>
-    </net>
-    <net code="94" name="/SD2100_SCL">
-      <node ref="IC304" pin="9"/>
-      <node ref="IC101" pin="54"/>
-    </net>
-    <net code="95" name="/MDC">
-      <node ref="IC402" pin="11"/>
-      <node ref="IC101" pin="27"/>
-    </net>
-    <net code="96" name="/MDIO">
-      <node ref="R409" pin="1"/>
-      <node ref="IC402" pin="10"/>
-      <node ref="IC101" pin="36"/>
-    </net>
-    <net code="97" name="/TXD1">
-      <node ref="IC402" pin="21"/>
-      <node ref="IC101" pin="129"/>
-    </net>
-    <net code="98" name="/TXD0">
-      <node ref="IC402" pin="20"/>
-      <node ref="IC101" pin="128"/>
-    </net>
-    <net code="99" name="/TXEN">
-      <node ref="IC101" pin="126"/>
-      <node ref="IC402" pin="19"/>
-    </net>
-    <net code="100" name="/REF_CLK">
-      <node ref="R408" pin="2"/>
-      <node ref="IC101" pin="35"/>
-    </net>
-    <net code="101" name="/CRS_DV">
-      <node ref="R405" pin="2"/>
-      <node ref="IC101" pin="43"/>
-    </net>
-    <net code="102" name="/RXD0">
-      <node ref="R407" pin="2"/>
-      <node ref="IC101" pin="44"/>
-    </net>
-    <net code="103" name="/RXD1">
-      <node ref="IC101" pin="45"/>
-      <node ref="R404" pin="2"/>
-    </net>
-    <net code="104" name="/CS2100_CLK">
-      <node ref="IC304" pin="3"/>
-      <node ref="IC101" pin="23"/>
-    </net>
-    <net code="105" name="Net-(C121-Pad1)">
-      <node ref="C121" pin="1"/>
-      <node ref="IC102" pin="5"/>
-    </net>
-    <net code="106" name="/ROM_~CS">
+    <net code="1" name="/ROM_~CS">
       <node ref="IC103" pin="5"/>
       <node ref="IC101" pin="22"/>
     </net>
-    <net code="107" name="/MAINS_ZC">
-      <node ref="IC203" pin="1"/>
-      <node ref="IC101" pin="110"/>
+    <net code="2" name="/uSD_CLK">
+      <node ref="IC101" pin="113"/>
+      <node ref="U101" pin="5"/>
     </net>
-    <net code="108" name="/MAINS_WAVE">
+    <net code="3" name="Net-(R108-Pad2)">
+      <node ref="R108" pin="2"/>
+      <node ref="U101" pin="2"/>
+    </net>
+    <net code="4" name="Net-(R105-Pad2)">
+      <node ref="R105" pin="2"/>
+      <node ref="U101" pin="1"/>
+    </net>
+    <net code="5" name="Net-(R107-Pad2)">
+      <node ref="R107" pin="2"/>
+      <node ref="U101" pin="8"/>
+    </net>
+    <net code="6" name="/MAINS_ZC">
+      <node ref="IC101" pin="110"/>
+      <node ref="R205" pin="2"/>
+    </net>
+    <net code="7" name="/MAINS_WAVE">
+      <node ref="IC204" pin="1"/>
       <node ref="IC101" pin="28"/>
       <node ref="IC204" pin="2"/>
-      <node ref="IC204" pin="1"/>
     </net>
-    <net code="109" name="/V_BATT/2">
+    <net code="8" name="/MAINS_BIAS">
+      <node ref="IC203" pin="4"/>
+      <node ref="C207" pin="2"/>
+      <node ref="IC101" pin="29"/>
+      <node ref="R201" pin="1"/>
+      <node ref="T201" pin="7"/>
+      <node ref="IC204" pin="7"/>
+      <node ref="IC204" pin="6"/>
+      <node ref="C208" pin="1"/>
+    </net>
+    <net code="9" name="/V_BATT_MON">
       <node ref="IC101" pin="14"/>
       <node ref="R504" pin="2"/>
       <node ref="R505" pin="1"/>
     </net>
-    <net code="110" name="/I_CHG">
-      <node ref="R501" pin="2"/>
-      <node ref="IC101" pin="13"/>
+    <net code="10" name="/I_CHG">
       <node ref="IC501" pin="16"/>
+      <node ref="IC101" pin="13"/>
+      <node ref="R501" pin="2"/>
     </net>
-    <net code="111" name="/~CHG">
+    <net code="11" name="/~CHG">
       <node ref="IC501" pin="9"/>
-      <node ref="IC101" pin="12"/>
+      <node ref="IC101" pin="73"/>
     </net>
-    <net code="112" name="/~PGOOD">
-      <node ref="IC101" pin="11"/>
+    <net code="12" name="/~PGOOD">
+      <node ref="IC101" pin="74"/>
       <node ref="IC501" pin="7"/>
     </net>
-    <net code="113" name="/~CE">
+    <net code="13" name="/~CE">
+      <node ref="IC101" pin="75"/>
       <node ref="IC501" pin="4"/>
-      <node ref="IC101" pin="10"/>
     </net>
-    <net code="114" name="/GPS_RXD">
-      <node ref="IC303" pin="3"/>
+    <net code="14" name="/GPS_RXD">
       <node ref="IC101" pin="119"/>
+      <node ref="IC303" pin="3"/>
     </net>
-    <net code="115" name="/GPS_TXD">
-      <node ref="IC101" pin="122"/>
-      <node ref="IC303" pin="2"/>
+    <net code="15" name="/nRST">
+      <node ref="P101" pin="10"/>
+      <node ref="IC101" pin="25"/>
     </net>
-    <net code="116" name="/GPS_~RESET">
-      <node ref="IC101" pin="118"/>
-      <node ref="IC303" pin="9"/>
+    <net code="16" name="/SWCLK">
+      <node ref="IC101" pin="109"/>
+      <node ref="P101" pin="4"/>
     </net>
-    <net code="117" name="/GPS_PPS">
-      <node ref="IC303" pin="18"/>
-      <node ref="IC101" pin="133"/>
+    <net code="17" name="/SWDIO">
+      <node ref="P101" pin="2"/>
+      <node ref="IC101" pin="105"/>
     </net>
-    <net code="118" name="3v3">
+    <net code="18" name="Net-(IC101-Pad34)">
+      <node ref="IC101" pin="34"/>
+    </net>
+    <net code="19" name="Net-(IC101-Pad24)">
+      <node ref="IC101" pin="24"/>
+    </net>
+    <net code="20" name="Net-(IC101-Pad134)">
+      <node ref="IC101" pin="134"/>
+    </net>
+    <net code="21" name="Net-(IC101-Pad102)">
+      <node ref="IC101" pin="102"/>
+    </net>
+    <net code="22" name="Net-(IC101-Pad101)">
+      <node ref="IC101" pin="101"/>
+    </net>
+    <net code="23" name="Net-(IC101-Pad26)">
+      <node ref="IC101" pin="26"/>
+    </net>
+    <net code="24" name="Net-(IC101-Pad112)">
+      <node ref="IC101" pin="112"/>
+    </net>
+    <net code="25" name="Net-(IC101-Pad7)">
+      <node ref="IC101" pin="7"/>
+    </net>
+    <net code="26" name="Net-(IC101-Pad8)">
+      <node ref="IC101" pin="8"/>
+    </net>
+    <net code="27" name="Net-(IC101-Pad9)">
+      <node ref="IC101" pin="9"/>
+    </net>
+    <net code="28" name="Net-(IC101-Pad114)">
+      <node ref="IC101" pin="114"/>
+    </net>
+    <net code="29" name="Net-(IC101-Pad115)">
+      <node ref="IC101" pin="115"/>
+    </net>
+    <net code="30" name="Net-(IC101-Pad117)">
+      <node ref="IC101" pin="117"/>
+    </net>
+    <net code="31" name="Net-(IC101-Pad123)">
+      <node ref="IC101" pin="123"/>
+    </net>
+    <net code="32" name="Net-(IC101-Pad77)">
+      <node ref="IC101" pin="77"/>
+    </net>
+    <net code="33" name="Net-(IC101-Pad78)">
+      <node ref="IC101" pin="78"/>
+    </net>
+    <net code="34" name="Net-(IC101-Pad80)">
+      <node ref="IC101" pin="80"/>
+    </net>
+    <net code="35" name="Net-(IC101-Pad82)">
+      <node ref="IC101" pin="82"/>
+    </net>
+    <net code="36" name="3v3">
+      <node ref="R105" pin="1"/>
       <node ref="C307" pin="1"/>
-      <node ref="C101" pin="1"/>
-      <node ref="R410" pin="1"/>
-      <node ref="C123" pin="1"/>
-      <node ref="IC303" pin="8"/>
-      <node ref="IC303" pin="7"/>
-      <node ref="IC303" pin="6"/>
-      <node ref="C306" pin="1"/>
-      <node ref="C116" pin="1"/>
-      <node ref="C109" pin="1"/>
+      <node ref="R108" pin="1"/>
+      <node ref="C119" pin="1"/>
+      <node ref="IC304" pin="1"/>
       <node ref="R106" pin="1"/>
-      <node ref="C112" pin="1"/>
-      <node ref="C115" pin="1"/>
+      <node ref="IC101" pin="17"/>
+      <node ref="R104" pin="1"/>
+      <node ref="IC303" pin="6"/>
+      <node ref="IC303" pin="7"/>
+      <node ref="IC303" pin="8"/>
+      <node ref="C608" pin="1"/>
+      <node ref="C306" pin="1"/>
+      <node ref="C609" pin="1"/>
+      <node ref="R107" pin="1"/>
+      <node ref="IC603" pin="2"/>
+      <node ref="U101" pin="4"/>
       <node ref="C102" pin="1"/>
-      <node ref="C106" pin="1"/>
+      <node ref="IC601" pin="35"/>
+      <node ref="IC601" pin="6"/>
+      <node ref="IC601" pin="7"/>
+      <node ref="IC601" pin="8"/>
+      <node ref="IC601" pin="9"/>
+      <node ref="IC601" pin="40"/>
+      <node ref="IC603" pin="1"/>
+      <node ref="IC601" pin="41"/>
+      <node ref="C121" pin="2"/>
+      <node ref="IC601" pin="42"/>
+      <node ref="C122" pin="1"/>
+      <node ref="IC102" pin="3"/>
+      <node ref="IC102" pin="2"/>
+      <node ref="IC102" pin="1"/>
+      <node ref="C601" pin="1"/>
+      <node ref="P101" pin="1"/>
+      <node ref="IC103" pin="6"/>
+      <node ref="IC101" pin="108"/>
+      <node ref="IC101" pin="95"/>
+      <node ref="IC101" pin="84"/>
+      <node ref="IC101" pin="131"/>
+      <node ref="IC101" pin="121"/>
+      <node ref="IC101" pin="143"/>
+      <node ref="IC101" pin="144"/>
+      <node ref="IC101" pin="39"/>
+      <node ref="C602" pin="1"/>
+      <node ref="C115" pin="1"/>
+      <node ref="C112" pin="1"/>
+      <node ref="C109" pin="1"/>
+      <node ref="C105" pin="1"/>
+      <node ref="C101" pin="1"/>
+      <node ref="C103" pin="1"/>
+      <node ref="IC101" pin="33"/>
+      <node ref="IC101" pin="6"/>
+      <node ref="R1" pin="1"/>
+      <node ref="R2" pin="1"/>
+      <node ref="C305" pin="1"/>
+      <node ref="IC101" pin="72"/>
+      <node ref="IC101" pin="62"/>
+      <node ref="IC101" pin="52"/>
+      <node ref="IC302" pin="5"/>
+      <node ref="IC101" pin="32"/>
+      <node ref="IC301" pin="8"/>
+      <node ref="C603" pin="1"/>
+      <node ref="IC301" pin="7"/>
+      <node ref="IC301" pin="6"/>
+      <node ref="C309" pin="1"/>
+      <node ref="IC101" pin="30"/>
+      <node ref="L401" pin="2"/>
+      <node ref="R401" pin="2"/>
       <node ref="C110" pin="1"/>
       <node ref="C113" pin="1"/>
-      <node ref="P102" pin="1"/>
-      <node ref="C119" pin="1"/>
-      <node ref="IC101" pin="30"/>
-      <node ref="C121" pin="2"/>
-      <node ref="IC101" pin="6"/>
-      <node ref="C122" pin="1"/>
-      <node ref="L401" pin="2"/>
-      <node ref="IC304" pin="1"/>
+      <node ref="C116" pin="1"/>
       <node ref="C107" pin="1"/>
       <node ref="C108" pin="1"/>
       <node ref="C104" pin="1"/>
       <node ref="C111" pin="1"/>
-      <node ref="C114" pin="1"/>
-      <node ref="IC103" pin="6"/>
-      <node ref="P101" pin="1"/>
-      <node ref="IC102" pin="1"/>
-      <node ref="IC102" pin="2"/>
-      <node ref="IC102" pin="3"/>
-      <node ref="U101" pin="4"/>
-      <node ref="IC601" pin="42"/>
-      <node ref="IC601" pin="41"/>
-      <node ref="IC601" pin="40"/>
-      <node ref="IC601" pin="9"/>
-      <node ref="IC601" pin="8"/>
-      <node ref="IC601" pin="7"/>
-      <node ref="IC601" pin="6"/>
-      <node ref="IC601" pin="1"/>
-      <node ref="IC101" pin="131"/>
-      <node ref="IC101" pin="121"/>
       <node ref="IC402" pin="14"/>
-      <node ref="C603" pin="1"/>
-      <node ref="C602" pin="1"/>
-      <node ref="C601" pin="1"/>
-      <node ref="IC603" pin="2"/>
-      <node ref="IC603" pin="1"/>
-      <node ref="D401" pin="1"/>
-      <node ref="IC601" pin="35"/>
-      <node ref="R409" pin="2"/>
-      <node ref="R104" pin="1"/>
-      <node ref="IC101" pin="95"/>
-      <node ref="IC101" pin="17"/>
-      <node ref="R401" pin="2"/>
-      <node ref="C105" pin="1"/>
-      <node ref="C305" pin="1"/>
-      <node ref="C609" pin="1"/>
-      <node ref="C608" pin="1"/>
-      <node ref="IC302" pin="5"/>
-      <node ref="R108" pin="1"/>
-      <node ref="R105" pin="1"/>
-      <node ref="C103" pin="1"/>
-      <node ref="R107" pin="1"/>
-      <node ref="IC101" pin="39"/>
+      <node ref="C114" pin="1"/>
       <node ref="C407" pin="2"/>
-      <node ref="IC101" pin="143"/>
-      <node ref="IC301" pin="7"/>
-      <node ref="IC301" pin="8"/>
-      <node ref="IC101" pin="32"/>
-      <node ref="IC101" pin="52"/>
-      <node ref="IC101" pin="62"/>
-      <node ref="IC101" pin="72"/>
-      <node ref="IC301" pin="6"/>
-      <node ref="IC101" pin="33"/>
-      <node ref="IC101" pin="84"/>
-      <node ref="IC101" pin="144"/>
+      <node ref="R409" pin="2"/>
       <node ref="C406" pin="2"/>
-      <node ref="IC101" pin="108"/>
+      <node ref="C106" pin="1"/>
     </net>
-    <net code="119" name="/ROM_SI">
-      <node ref="IC101" pin="21"/>
-      <node ref="IC103" pin="3"/>
-      <node ref="IC603" pin="13"/>
+    <net code="37" name="Net-(IC101-Pad85)">
+      <node ref="IC101" pin="85"/>
     </net>
-    <net code="120" name="VCC">
-      <node ref="IC501" pin="6"/>
-      <node ref="C502" pin="1"/>
-      <node ref="IC501" pin="11"/>
-      <node ref="IC501" pin="10"/>
-      <node ref="C605" pin="1"/>
-      <node ref="IC202" pin="7"/>
-      <node ref="IC202" pin="8"/>
-      <node ref="C607" pin="1"/>
-      <node ref="IC202" pin="6"/>
-      <node ref="R606" pin="1"/>
+    <net code="38" name="GND">
+      <node ref="R202" pin="2"/>
+      <node ref="C411" pin="1"/>
+      <node ref="C211" pin="2"/>
+      <node ref="IC603" pin="7"/>
+      <node ref="IC201" pin="4"/>
+      <node ref="IC601" pin="43"/>
+      <node ref="C410" pin="2"/>
+      <node ref="IC202" pin="4"/>
+      <node ref="C405" pin="1"/>
+      <node ref="Q601" pin="2"/>
+      <node ref="R204" pin="2"/>
+      <node ref="C212" pin="2"/>
+      <node ref="IC101" pin="138"/>
+      <node ref="IC203" pin="2"/>
+      <node ref="C210" pin="2"/>
+      <node ref="C206" pin="2"/>
+      <node ref="C408" pin="1"/>
+      <node ref="C409" pin="2"/>
+      <node ref="IC601" pin="48"/>
+      <node ref="IC601" pin="50"/>
+      <node ref="C204" pin="2"/>
+      <node ref="R503" pin="1"/>
+      <node ref="C607" pin="2"/>
+      <node ref="R505" pin="2"/>
+      <node ref="C402" pin="1"/>
+      <node ref="C407" pin="1"/>
+      <node ref="C604" pin="1"/>
+      <node ref="IC602" pin="7"/>
+      <node ref="C605" pin="2"/>
+      <node ref="R410" pin="2"/>
+      <node ref="IC603" pin="20"/>
+      <node ref="IC101" pin="107"/>
+      <node ref="L201" pin="1"/>
+      <node ref="IC603" pin="3"/>
+      <node ref="IC204" pin="4"/>
+      <node ref="IC603" pin="4"/>
+      <node ref="IC603" pin="17"/>
+      <node ref="C209" pin="2"/>
+      <node ref="C406" pin="1"/>
+      <node ref="R502" pin="1"/>
+      <node ref="C501" pin="2"/>
+      <node ref="IC603" pin="14"/>
+      <node ref="C208" pin="2"/>
+      <node ref="IC303" pin="10"/>
+      <node ref="IC303" pin="12"/>
+      <node ref="C608" pin="2"/>
+      <node ref="D608" pin="2"/>
+      <node ref="D607" pin="2"/>
+      <node ref="IC401" pin="S"/>
+      <node ref="C611" pin="2"/>
+      <node ref="D606" pin="2"/>
+      <node ref="C307" pin="2"/>
+      <node ref="D605" pin="2"/>
+      <node ref="C609" pin="2"/>
+      <node ref="IC303" pin="1"/>
+      <node ref="C610" pin="2"/>
+      <node ref="Y301" pin="2"/>
+      <node ref="IC304" pin="8"/>
+      <node ref="IC304" pin="2"/>
+      <node ref="P301" pin="2"/>
+      <node ref="C306" pin="2"/>
+      <node ref="IC301" pin="4"/>
+      <node ref="IC501" pin="8"/>
+      <node ref="IC302" pin="3"/>
+      <node ref="C404" pin="2"/>
+      <node ref="IC501" pin="5"/>
+      <node ref="C403" pin="2"/>
+      <node ref="C502" pin="2"/>
+      <node ref="R501" pin="1"/>
+      <node ref="C603" pin="2"/>
+      <node ref="C302" pin="2"/>
+      <node ref="IC501" pin="EP"/>
+      <node ref="C601" pin="2"/>
+      <node ref="C401" pin="2"/>
+      <node ref="C602" pin="2"/>
+      <node ref="IC402" pin="EP"/>
+      <node ref="IC601" pin="49"/>
+      <node ref="C303" pin="2"/>
+      <node ref="C305" pin="2"/>
+      <node ref="D301" pin="1"/>
+      <node ref="C308" pin="2"/>
+      <node ref="C309" pin="2"/>
+      <node ref="C503" pin="2"/>
+      <node ref="J501" pin="1"/>
+      <node ref="IC402" pin="22"/>
+      <node ref="R406" pin="2"/>
+      <node ref="C122" pin="2"/>
+      <node ref="P101" pin="9"/>
+      <node ref="P101" pin="3"/>
+      <node ref="C102" pin="2"/>
+      <node ref="C115" pin="2"/>
+      <node ref="C112" pin="2"/>
+      <node ref="IC103" pin="2"/>
+      <node ref="C109" pin="2"/>
+      <node ref="C105" pin="2"/>
+      <node ref="P101" pin="5"/>
+      <node ref="U101" pin="9"/>
+      <node ref="C101" pin="2"/>
+      <node ref="C103" pin="2"/>
+      <node ref="IC102" pin="4"/>
+      <node ref="D101" pin="1"/>
+      <node ref="IC101" pin="51"/>
+      <node ref="IC101" pin="61"/>
+      <node ref="C117" pin="2"/>
+      <node ref="IC101" pin="31"/>
+      <node ref="IC101" pin="83"/>
+      <node ref="C114" pin="2"/>
+      <node ref="C111" pin="2"/>
+      <node ref="C108" pin="2"/>
+      <node ref="C107" pin="2"/>
+      <node ref="C116" pin="2"/>
+      <node ref="C113" pin="2"/>
+      <node ref="C110" pin="2"/>
+      <node ref="C106" pin="2"/>
+      <node ref="C104" pin="2"/>
+      <node ref="C120" pin="2"/>
+      <node ref="D103" pin="1"/>
+      <node ref="C118" pin="2"/>
+      <node ref="U101" pin="6"/>
+      <node ref="IC101" pin="16"/>
+      <node ref="D102" pin="1"/>
+      <node ref="IC101" pin="130"/>
+      <node ref="C119" pin="2"/>
+      <node ref="IC101" pin="120"/>
+      <node ref="IC101" pin="94"/>
+      <node ref="IC101" pin="38"/>
+    </net>
+    <net code="39" name="/SOUNDER_~SD">
+      <node ref="IC101" pin="48"/>
+      <node ref="IC602" pin="1"/>
+      <node ref="R606" pin="2"/>
+    </net>
+    <net code="40" name="Net-(D103-Pad2)">
+      <node ref="D103" pin="2"/>
+      <node ref="R103" pin="2"/>
+    </net>
+    <net code="41" name="/LED3">
+      <node ref="R103" pin="1"/>
+      <node ref="IC101" pin="137"/>
+    </net>
+    <net code="42" name="/LED1">
+      <node ref="R101" pin="1"/>
+      <node ref="IC101" pin="135"/>
+    </net>
+    <net code="43" name="/LED2">
+      <node ref="IC101" pin="136"/>
+      <node ref="R102" pin="1"/>
+    </net>
+    <net code="44" name="/TFT_DCX">
+      <node ref="IC601" pin="36"/>
+      <node ref="IC101" pin="2"/>
+    </net>
+    <net code="45" name="/TFT_~CS">
+      <node ref="IC101" pin="3"/>
+      <node ref="IC601" pin="38"/>
+    </net>
+    <net code="46" name="/TFT_SCL">
+      <node ref="IC601" pin="37"/>
+      <node ref="IC101" pin="1"/>
+    </net>
+    <net code="47" name="/TFT_RESET">
+      <node ref="IC601" pin="10"/>
+      <node ref="IC101" pin="4"/>
+    </net>
+    <net code="48" name="/TFT_SDA">
+      <node ref="IC101" pin="5"/>
+      <node ref="R602" pin="2"/>
+    </net>
+    <net code="49" name="/B2">
+      <node ref="IC101" pin="125"/>
+      <node ref="IC601" pin="32"/>
+    </net>
+    <net code="50" name="/B3">
+      <node ref="IC601" pin="31"/>
+      <node ref="IC101" pin="79"/>
+    </net>
+    <net code="51" name="/B4">
+      <node ref="IC601" pin="30"/>
+      <node ref="IC101" pin="65"/>
+    </net>
+    <net code="52" name="/B5">
+      <node ref="IC601" pin="29"/>
+      <node ref="IC101" pin="37"/>
+    </net>
+    <net code="53" name="/B6">
+      <node ref="IC101" pin="139"/>
+      <node ref="IC601" pin="28"/>
+    </net>
+    <net code="54" name="/B7">
+      <node ref="IC101" pin="140"/>
+      <node ref="IC601" pin="27"/>
+    </net>
+    <net code="55" name="Net-(IC101-Pad91)">
+      <node ref="IC101" pin="91"/>
+    </net>
+    <net code="56" name="Net-(IC101-Pad86)">
+      <node ref="IC101" pin="86"/>
+    </net>
+    <net code="57" name="Net-(IC101-Pad141)">
+      <node ref="IC101" pin="141"/>
+    </net>
+    <net code="58" name="Net-(IC101-Pad142)">
+      <node ref="IC101" pin="142"/>
+    </net>
+    <net code="59" name="Net-(IC101-Pad58)">
+      <node ref="IC101" pin="58"/>
+    </net>
+    <net code="60" name="Net-(IC101-Pad59)">
+      <node ref="IC101" pin="59"/>
+    </net>
+    <net code="61" name="Net-(IC101-Pad60)">
+      <node ref="IC101" pin="60"/>
+    </net>
+    <net code="62" name="Net-(IC101-Pad63)">
+      <node ref="IC101" pin="63"/>
+    </net>
+    <net code="63" name="Net-(IC101-Pad49)">
+      <node ref="IC101" pin="49"/>
+    </net>
+    <net code="64" name="Net-(IC101-Pad50)">
+      <node ref="IC101" pin="50"/>
+    </net>
+    <net code="65" name="Net-(IC101-Pad53)">
+      <node ref="IC101" pin="53"/>
+    </net>
+    <net code="66" name="Net-(IC101-Pad56)">
+      <node ref="IC101" pin="56"/>
+    </net>
+    <net code="67" name="Net-(IC101-Pad57)">
+      <node ref="IC101" pin="57"/>
+    </net>
+    <net code="68" name="Net-(IC101-Pad90)">
+      <node ref="IC101" pin="90"/>
+    </net>
+    <net code="69" name="/GPS_TXD">
+      <node ref="IC101" pin="122"/>
+      <node ref="IC303" pin="2"/>
+    </net>
+    <net code="70" name="Net-(IC101-Pad92)">
+      <node ref="IC101" pin="92"/>
+    </net>
+    <net code="71" name="Net-(IC101-Pad124)">
+      <node ref="IC101" pin="124"/>
+    </net>
+    <net code="72" name="Net-(IC101-Pad127)">
+      <node ref="IC101" pin="127"/>
+    </net>
+    <net code="73" name="Net-(IC101-Pad132)">
+      <node ref="IC101" pin="132"/>
+    </net>
+    <net code="74" name="Net-(D101-Pad2)">
+      <node ref="R101" pin="2"/>
+      <node ref="D101" pin="2"/>
+    </net>
+    <net code="75" name="Net-(D102-Pad2)">
+      <node ref="R102" pin="2"/>
+      <node ref="D102" pin="2"/>
+    </net>
+    <net code="76" name="/R4">
+      <node ref="IC601" pin="18"/>
+      <node ref="IC101" pin="103"/>
+    </net>
+    <net code="77" name="/R5">
+      <node ref="IC601" pin="17"/>
+      <node ref="IC101" pin="104"/>
+    </net>
+    <net code="78" name="/R3">
+      <node ref="IC601" pin="19"/>
+      <node ref="IC101" pin="46"/>
+    </net>
+    <net code="79" name="/R6">
+      <node ref="IC601" pin="16"/>
+      <node ref="IC101" pin="47"/>
+    </net>
+    <net code="80" name="/G4">
+      <node ref="IC101" pin="69"/>
+      <node ref="IC601" pin="24"/>
+    </net>
+    <net code="81" name="/G5">
+      <node ref="IC101" pin="70"/>
+      <node ref="IC601" pin="23"/>
+    </net>
+    <net code="82" name="/HSYNC">
+      <node ref="IC601" pin="12"/>
+      <node ref="IC101" pin="96"/>
+    </net>
+    <net code="83" name="/G6">
+      <node ref="IC601" pin="22"/>
+      <node ref="IC101" pin="97"/>
+    </net>
+    <net code="84" name="/R2">
+      <node ref="IC101" pin="111"/>
+      <node ref="IC601" pin="20"/>
+    </net>
+    <net code="85" name="/VSYNC">
+      <node ref="IC101" pin="40"/>
+      <node ref="IC601" pin="11"/>
+    </net>
+    <net code="86" name="/G2">
+      <node ref="IC101" pin="42"/>
+      <node ref="IC601" pin="26"/>
+    </net>
+    <net code="87" name="Net-(IC101-Pad88)">
+      <node ref="IC101" pin="88"/>
+    </net>
+    <net code="88" name="Net-(IC101-Pad87)">
+      <node ref="IC101" pin="87"/>
+    </net>
+    <net code="89" name="Net-(IC101-Pad89)">
+      <node ref="IC101" pin="89"/>
+    </net>
+    <net code="90" name="Net-(IC101-Pad10)">
+      <node ref="IC101" pin="10"/>
+    </net>
+    <net code="91" name="Net-(IC101-Pad11)">
+      <node ref="IC101" pin="11"/>
+    </net>
+    <net code="92" name="Net-(IC101-Pad12)">
+      <node ref="IC101" pin="12"/>
+    </net>
+    <net code="93" name="Net-(IC101-Pad54)">
+      <node ref="IC101" pin="54"/>
+    </net>
+    <net code="94" name="Net-(IC101-Pad55)">
+      <node ref="IC101" pin="55"/>
+    </net>
+    <net code="95" name="/PHY_~RST">
+      <node ref="R410" pin="1"/>
+      <node ref="IC402" pin="24"/>
+      <node ref="IC101" pin="76"/>
+    </net>
+    <net code="96" name="/G3">
+      <node ref="IC601" pin="25"/>
+      <node ref="IC101" pin="64"/>
+    </net>
+    <net code="97" name="/DE">
+      <node ref="IC101" pin="66"/>
+      <node ref="IC601" pin="14"/>
+    </net>
+    <net code="98" name="/DOTCLK">
+      <node ref="IC101" pin="67"/>
+      <node ref="IC601" pin="13"/>
+    </net>
+    <net code="99" name="/R7">
+      <node ref="IC101" pin="68"/>
+      <node ref="IC601" pin="15"/>
+    </net>
+    <net code="100" name="/G7">
+      <node ref="IC101" pin="93"/>
+      <node ref="IC601" pin="21"/>
+    </net>
+    <net code="101" name="VCC">
       <node ref="IC102" pin="7"/>
       <node ref="IC102" pin="6"/>
       <node ref="IC102" pin="8"/>
-      <node ref="C120" pin="1"/>
+      <node ref="C605" pin="1"/>
+      <node ref="C607" pin="1"/>
       <node ref="IC602" pin="6"/>
+      <node ref="IC202" pin="6"/>
+      <node ref="IC501" pin="10"/>
+      <node ref="C502" pin="1"/>
+      <node ref="IC601" pin="1"/>
       <node ref="C204" pin="1"/>
+      <node ref="IC202" pin="7"/>
+      <node ref="IC202" pin="8"/>
+      <node ref="IC501" pin="6"/>
+      <node ref="C120" pin="1"/>
+      <node ref="IC501" pin="11"/>
+      <node ref="R606" pin="1"/>
     </net>
-    <net code="121" name="/linetime_battery/DC_IN">
+    <net code="102" name="Net-(C121-Pad1)">
+      <node ref="C121" pin="1"/>
+      <node ref="IC102" pin="5"/>
+    </net>
+    <net code="103" name="/linetime_battery/DC_IN">
       <node ref="IC501" pin="13"/>
-      <node ref="IC201" pin="3"/>
       <node ref="C501" pin="1"/>
+      <node ref="IC201" pin="3"/>
     </net>
-    <net code="122" name="/SOUNDER">
-      <node ref="C606" pin="1"/>
+    <net code="104" name="/SOUNDER">
       <node ref="IC101" pin="41"/>
+      <node ref="C606" pin="1"/>
     </net>
-    <net code="123" name="/BACKLIGHT">
-      <node ref="IC101" pin="81"/>
+    <net code="105" name="/BACKLIGHT">
       <node ref="R601" pin="2"/>
+      <node ref="IC101" pin="81"/>
     </net>
-    <net code="124" name="/ROM_SCK">
+    <net code="106" name="/ROM_SI">
+      <node ref="IC103" pin="3"/>
+      <node ref="IC603" pin="13"/>
+      <node ref="IC101" pin="21"/>
+    </net>
+    <net code="107" name="/ROM_SCK">
       <node ref="IC101" pin="19"/>
       <node ref="IC103" pin="1"/>
       <node ref="IC603" pin="11"/>
     </net>
-    <net code="125" name="/ROM_SO">
+    <net code="108" name="/ROM_SO">
+      <node ref="IC103" pin="4"/>
       <node ref="IC101" pin="20"/>
       <node ref="IC603" pin="9"/>
-      <node ref="IC103" pin="4"/>
     </net>
-    <net code="126" name="/TOUCH_INT">
+    <net code="109" name="/TOUCH_INT">
       <node ref="IC603" pin="6"/>
       <node ref="IC101" pin="15"/>
     </net>
-    <net code="127" name="/TOUCH_~CS">
-      <node ref="IC603" pin="8"/>
+    <net code="110" name="/TOUCH_~CS">
       <node ref="IC101" pin="18"/>
+      <node ref="IC603" pin="8"/>
     </net>
-    <net code="128" name="Net-(C118-Pad1)">
-      <node ref="C118" pin="1"/>
+    <net code="111" name="Net-(C118-Pad1)">
       <node ref="IC101" pin="106"/>
+      <node ref="C118" pin="1"/>
     </net>
-    <net code="129" name="Net-(C117-Pad1)">
-      <node ref="IC101" pin="71"/>
+    <net code="112" name="/RXD1">
+      <node ref="R404" pin="2"/>
+      <node ref="IC101" pin="45"/>
+    </net>
+    <net code="113" name="/GPS_~RESET">
+      <node ref="IC303" pin="9"/>
+      <node ref="IC101" pin="118"/>
+    </net>
+    <net code="114" name="/GPS_PPS">
+      <node ref="IC303" pin="18"/>
+      <node ref="IC101" pin="133"/>
+    </net>
+    <net code="115" name="/CS2100_CLK">
+      <node ref="R303" pin="2"/>
+      <node ref="IC101" pin="23"/>
+    </net>
+    <net code="116" name="/CS2100_SDA">
+      <node ref="IC304" pin="10"/>
+      <node ref="R1" pin="2"/>
+      <node ref="IC101" pin="99"/>
+    </net>
+    <net code="117" name="/SD2100_SCL">
+      <node ref="IC304" pin="9"/>
+      <node ref="R2" pin="2"/>
+      <node ref="IC101" pin="100"/>
+    </net>
+    <net code="118" name="/MDC">
+      <node ref="IC402" pin="11"/>
+      <node ref="IC101" pin="27"/>
+    </net>
+    <net code="119" name="/MDIO">
+      <node ref="IC101" pin="36"/>
+      <node ref="R409" pin="1"/>
+      <node ref="IC402" pin="10"/>
+    </net>
+    <net code="120" name="/TXD1">
+      <node ref="IC101" pin="129"/>
+      <node ref="R412" pin="2"/>
+    </net>
+    <net code="121" name="/TXD0">
+      <node ref="R413" pin="2"/>
+      <node ref="IC101" pin="128"/>
+    </net>
+    <net code="122" name="/TXEN">
+      <node ref="IC101" pin="126"/>
+      <node ref="R411" pin="2"/>
+    </net>
+    <net code="123" name="/REF_CLK">
+      <node ref="IC101" pin="35"/>
+      <node ref="R408" pin="2"/>
+    </net>
+    <net code="124" name="/CRS_DV">
+      <node ref="IC101" pin="43"/>
+      <node ref="R405" pin="2"/>
+    </net>
+    <net code="125" name="/RXD0">
+      <node ref="R407" pin="2"/>
+      <node ref="IC101" pin="44"/>
+    </net>
+    <net code="126" name="Net-(C117-Pad1)">
       <node ref="C117" pin="1"/>
+      <node ref="IC101" pin="71"/>
     </net>
-    <net code="130" name="Net-(J101-Pad4)">
-      <node ref="J101" pin="4"/>
-    </net>
-    <net code="131" name="Net-(J101-PadS)">
-      <node ref="J101" pin="S"/>
-    </net>
-    <net code="132" name="/uSD_DAT0">
+    <net code="127" name="/uSD_DAT0">
       <node ref="R104" pin="2"/>
-      <node ref="U101" pin="7"/>
       <node ref="IC101" pin="98"/>
+      <node ref="U101" pin="7"/>
     </net>
-    <net code="133" name="/uSD_CMD">
-      <node ref="U101" pin="3"/>
+    <net code="128" name="/uSD_CMD">
       <node ref="IC101" pin="116"/>
       <node ref="R106" pin="2"/>
+      <node ref="U101" pin="3"/>
     </net>
-    <net code="134" name="Net-(U101-Pad10)">
+    <net code="129" name="Net-(U101-Pad10)">
       <node ref="U101" pin="10"/>
     </net>
-    <net code="135" name="Net-(U101-Pad11)">
+    <net code="130" name="Net-(U101-Pad11)">
       <node ref="U101" pin="11"/>
     </net>
-    <net code="136" name="Net-(P101-Pad8)">
+    <net code="131" name="Net-(P101-Pad8)">
       <node ref="P101" pin="8"/>
     </net>
-    <net code="137" name="Net-(P101-Pad6)">
+    <net code="132" name="Net-(P101-Pad6)">
       <node ref="P101" pin="6"/>
     </net>
-    <net code="138" name="Net-(P102-Pad6)">
-      <node ref="P102" pin="6"/>
-    </net>
-    <net code="139" name="Net-(P101-Pad7)">
+    <net code="133" name="Net-(P101-Pad7)">
       <node ref="P101" pin="7"/>
     </net>
-    <net code="140" name="Net-(IC203-Pad3)">
-      <node ref="IC203" pin="3"/>
-      <node ref="IC204" pin="3"/>
-      <node ref="R201" pin="3"/>
-    </net>
-    <net code="141" name="Net-(IC203-Pad5)">
-      <node ref="R203" pin="2"/>
-      <node ref="IC203" pin="5"/>
-      <node ref="R204" pin="1"/>
-    </net>
-    <net code="142" name="Net-(C205-Pad1)">
-      <node ref="C205" pin="1"/>
-      <node ref="IC202" pin="5"/>
-    </net>
-    <net code="143" name="AVCC">
-      <node ref="C209" pin="1"/>
-      <node ref="IC202" pin="3"/>
-      <node ref="IC202" pin="2"/>
-      <node ref="C206" pin="1"/>
-      <node ref="R202" pin="1"/>
-      <node ref="IC203" pin="6"/>
-      <node ref="R203" pin="1"/>
-      <node ref="C210" pin="1"/>
-      <node ref="C212" pin="1"/>
-      <node ref="IC204" pin="8"/>
-      <node ref="C211" pin="1"/>
-      <node ref="C205" pin="2"/>
-      <node ref="IC202" pin="1"/>
-    </net>
-    <net code="144" name="/linetime_mains/NEUTRAL">
-      <node ref="T201" pin="4"/>
-      <node ref="IC201" pin="2"/>
-      <node ref="C202" pin="1"/>
-      <node ref="C201" pin="1"/>
-      <node ref="C203" pin="2"/>
-      <node ref="J201" pin="2"/>
-    </net>
-    <net code="145" name="Net-(IC204-Pad5)">
-      <node ref="IC204" pin="5"/>
+    <net code="134" name="Net-(IC204-Pad5)">
       <node ref="R202" pin="3"/>
+      <node ref="IC204" pin="5"/>
     </net>
-    <net code="146" name="/linetime_mains/EARTH">
+    <net code="135" name="/linetime_mains/EARTH">
+      <node ref="J201" pin="3"/>
       <node ref="C202" pin="2"/>
       <node ref="C201" pin="2"/>
       <node ref="L201" pin="2"/>
-      <node ref="J201" pin="3"/>
+    </net>
+    <net code="136" name="Net-(IC203-Pad1)">
+      <node ref="IC203" pin="1"/>
+      <node ref="R205" pin="1"/>
+    </net>
+    <net code="137" name="Net-(T201-Pad5)">
+      <node ref="T201" pin="5"/>
+    </net>
+    <net code="138" name="Net-(T201-Pad6)">
+      <node ref="T201" pin="6"/>
+    </net>
+    <net code="139" name="Net-(T201-Pad2)">
+      <node ref="T201" pin="2"/>
+      <node ref="T201" pin="3"/>
+    </net>
+    <net code="140" name="Net-(C205-Pad1)">
+      <node ref="IC202" pin="5"/>
+      <node ref="C205" pin="1"/>
+    </net>
+    <net code="141" name="Net-(C207-Pad1)">
+      <node ref="C207" pin="1"/>
+      <node ref="R206" pin="1"/>
+      <node ref="R201" pin="2"/>
+    </net>
+    <net code="142" name="Net-(R206-Pad2)">
+      <node ref="R206" pin="2"/>
+      <node ref="T201" pin="8"/>
+    </net>
+    <net code="143" name="AVCC">
+      <node ref="R202" pin="1"/>
+      <node ref="C211" pin="1"/>
+      <node ref="IC204" pin="8"/>
+      <node ref="C209" pin="1"/>
+      <node ref="C206" pin="1"/>
+      <node ref="C205" pin="2"/>
+      <node ref="IC202" pin="2"/>
+      <node ref="IC202" pin="3"/>
+      <node ref="IC203" pin="6"/>
+      <node ref="R203" pin="1"/>
+      <node ref="C212" pin="1"/>
+      <node ref="IC202" pin="1"/>
+      <node ref="C210" pin="1"/>
+    </net>
+    <net code="144" name="Net-(IC203-Pad3)">
+      <node ref="IC204" pin="3"/>
+      <node ref="R201" pin="3"/>
+      <node ref="IC203" pin="3"/>
+    </net>
+    <net code="145" name="Net-(IC203-Pad5)">
+      <node ref="R204" pin="1"/>
+      <node ref="R203" pin="2"/>
+      <node ref="IC203" pin="5"/>
+    </net>
+    <net code="146" name="/linetime_mains/NEUTRAL">
+      <node ref="J201" pin="2"/>
+      <node ref="T201" pin="4"/>
+      <node ref="C203" pin="2"/>
+      <node ref="C202" pin="1"/>
+      <node ref="C201" pin="1"/>
+      <node ref="IC201" pin="2"/>
     </net>
     <net code="147" name="/linetime_mains/LIVE">
       <node ref="T201" pin="1"/>
       <node ref="J201" pin="1"/>
-      <node ref="IC201" pin="1"/>
       <node ref="C203" pin="1"/>
+      <node ref="IC201" pin="1"/>
     </net>
-    <net code="148" name="Net-(T201-Pad2)">
-      <node ref="T201" pin="3"/>
-      <node ref="T201" pin="2"/>
-    </net>
-    <net code="149" name="Net-(C207-Pad1)">
-      <node ref="C207" pin="1"/>
-      <node ref="L202" pin="1"/>
-      <node ref="T201" pin="6"/>
-    </net>
-    <net code="150" name="Net-(T201-Pad7)">
-      <node ref="T201" pin="7"/>
-    </net>
-    <net code="151" name="Net-(T201-Pad8)">
-      <node ref="T201" pin="8"/>
-    </net>
-    <net code="152" name="Net-(L202-Pad2)">
-      <node ref="R201" pin="2"/>
-      <node ref="L202" pin="2"/>
-    </net>
-    <net code="153" name="Net-(C301-Pad1)">
-      <node ref="C301" pin="1"/>
-      <node ref="IC301" pin="5"/>
-    </net>
-    <net code="154" name="Net-(IC304-Pad6)">
-      <node ref="IC304" pin="6"/>
-    </net>
-    <net code="155" name="Net-(IC304-Pad4)">
-      <node ref="IC304" pin="4"/>
-    </net>
-    <net code="156" name="Net-(C304-Pad1)">
-      <node ref="C304" pin="1"/>
-      <node ref="Y301" pin="3"/>
-    </net>
-    <net code="157" name="Net-(C301-Pad2)">
-      <node ref="Y301" pin="4"/>
+    <net code="148" name="Net-(C301-Pad2)">
       <node ref="IC301" pin="1"/>
       <node ref="IC301" pin="2"/>
       <node ref="IC301" pin="3"/>
+      <node ref="Y301" pin="4"/>
       <node ref="C303" pin="1"/>
-      <node ref="C302" pin="1"/>
       <node ref="C301" pin="2"/>
+      <node ref="C302" pin="1"/>
     </net>
-    <net code="158" name="Net-(IC302-Pad1)">
+    <net code="149" name="Net-(C301-Pad1)">
+      <node ref="IC301" pin="5"/>
+      <node ref="C301" pin="1"/>
+    </net>
+    <net code="150" name="Net-(IC302-Pad1)">
       <node ref="IC302" pin="1"/>
     </net>
-    <net code="159" name="Net-(C304-Pad2)">
-      <node ref="C304" pin="2"/>
+    <net code="151" name="Net-(IC304-Pad6)">
+      <node ref="IC304" pin="6"/>
+    </net>
+    <net code="152" name="Net-(C304-Pad1)">
+      <node ref="Y301" pin="3"/>
+      <node ref="C304" pin="1"/>
+    </net>
+    <net code="153" name="Net-(IC304-Pad3)">
+      <node ref="IC304" pin="3"/>
+      <node ref="R303" pin="1"/>
+    </net>
+    <net code="154" name="Net-(C304-Pad2)">
       <node ref="IC302" pin="2"/>
+      <node ref="C304" pin="2"/>
       <node ref="R301" pin="1"/>
     </net>
-    <net code="160" name="Net-(IC302-Pad4)">
+    <net code="155" name="Net-(IC302-Pad4)">
       <node ref="IC304" pin="7"/>
-      <node ref="IC302" pin="4"/>
       <node ref="R301" pin="2"/>
+      <node ref="IC302" pin="4"/>
     </net>
-    <net code="161" name="Net-(IC303-Pad15)">
-      <node ref="IC303" pin="15"/>
-    </net>
-    <net code="162" name="Net-(D301-Pad2)">
-      <node ref="P301" pin="1"/>
-      <node ref="L301" pin="2"/>
-      <node ref="IC303" pin="11"/>
-      <node ref="D301" pin="2"/>
-    </net>
-    <net code="163" name="Net-(IC303-Pad13)">
+    <net code="156" name="Net-(IC303-Pad13)">
       <node ref="IC303" pin="13"/>
     </net>
-    <net code="164" name="Net-(IC303-Pad16)">
+    <net code="157" name="Net-(IC303-Pad15)">
+      <node ref="IC303" pin="15"/>
+    </net>
+    <net code="158" name="Net-(IC303-Pad16)">
       <node ref="IC303" pin="16"/>
     </net>
-    <net code="165" name="Net-(IC303-Pad17)">
+    <net code="159" name="Net-(IC303-Pad17)">
       <node ref="IC303" pin="17"/>
     </net>
-    <net code="166" name="Net-(IC303-Pad5)">
+    <net code="160" name="Net-(IC303-Pad5)">
       <node ref="IC303" pin="5"/>
     </net>
-    <net code="167" name="Net-(IC303-Pad14)">
+    <net code="161" name="Net-(IC303-Pad14)">
       <node ref="IC303" pin="14"/>
       <node ref="R302" pin="1"/>
     </net>
-    <net code="168" name="Net-(C308-Pad1)">
-      <node ref="L301" pin="1"/>
-      <node ref="R302" pin="2"/>
+    <net code="162" name="Net-(C308-Pad1)">
       <node ref="C308" pin="1"/>
+      <node ref="R302" pin="2"/>
+      <node ref="L301" pin="1"/>
     </net>
-    <net code="169" name="Net-(Y301-Pad1)">
+    <net code="163" name="Net-(D301-Pad2)">
+      <node ref="L301" pin="2"/>
+      <node ref="D301" pin="2"/>
+      <node ref="P301" pin="1"/>
+      <node ref="IC303" pin="11"/>
+    </net>
+    <net code="164" name="Net-(IC303-Pad4)">
+      <node ref="IC303" pin="4"/>
+      <node ref="IC304" pin="5"/>
+    </net>
+    <net code="165" name="Net-(IC304-Pad4)">
+      <node ref="IC304" pin="4"/>
+    </net>
+    <net code="166" name="Net-(Y301-Pad1)">
       <node ref="Y301" pin="1"/>
     </net>
-    <net code="170" name="Net-(IC303-Pad4)">
-      <node ref="IC304" pin="5"/>
-      <node ref="IC303" pin="4"/>
+    <net code="167" name="Net-(C402-Pad2)">
+      <node ref="L401" pin="1"/>
+      <node ref="C402" pin="2"/>
+      <node ref="C405" pin="2"/>
+      <node ref="IC402" pin="2"/>
     </net>
-    <net code="171" name="Net-(C408-Pad2)">
-      <node ref="C411" pin="2"/>
-      <node ref="C408" pin="2"/>
+    <net code="168" name="Net-(IC402-Pad3)">
+      <node ref="T401" pin="16"/>
+      <node ref="IC402" pin="3"/>
+    </net>
+    <net code="169" name="Net-(IC402-Pad6)">
+      <node ref="T401" pin="9"/>
+      <node ref="IC402" pin="6"/>
+    </net>
+    <net code="170" name="Net-(IC402-Pad16)">
+      <node ref="R408" pin="1"/>
+      <node ref="IC402" pin="16"/>
+    </net>
+    <net code="171" name="Net-(IC402-Pad5)">
+      <node ref="IC402" pin="5"/>
+      <node ref="T401" pin="11"/>
+    </net>
+    <net code="172" name="Net-(IC402-Pad4)">
+      <node ref="T401" pin="14"/>
+      <node ref="IC402" pin="4"/>
+    </net>
+    <net code="173" name="Net-(IC402-Pad9)">
+      <node ref="R406" pin="1"/>
+      <node ref="IC402" pin="9"/>
+    </net>
+    <net code="174" name="Net-(C408-Pad2)">
       <node ref="IC402" pin="1"/>
+      <node ref="C408" pin="2"/>
+      <node ref="C411" pin="2"/>
     </net>
-    <net code="172" name="Net-(C410-Pad1)">
+    <net code="175" name="Net-(C409-Pad1)">
+      <node ref="IC402" pin="7"/>
+      <node ref="C409" pin="1"/>
+      <node ref="Y401" pin="1"/>
+    </net>
+    <net code="176" name="Net-(C410-Pad1)">
       <node ref="C410" pin="1"/>
       <node ref="Y401" pin="2"/>
       <node ref="IC402" pin="8"/>
     </net>
-    <net code="173" name="Net-(C402-Pad2)">
-      <node ref="L401" pin="1"/>
-      <node ref="IC402" pin="2"/>
-      <node ref="C405" pin="2"/>
-      <node ref="C402" pin="2"/>
-    </net>
-    <net code="174" name="Net-(IC402-Pad9)">
-      <node ref="IC402" pin="9"/>
-      <node ref="R406" pin="1"/>
-    </net>
-    <net code="175" name="Net-(IC402-Pad16)">
-      <node ref="IC402" pin="16"/>
-      <node ref="R408" pin="1"/>
-    </net>
-    <net code="176" name="Net-(IC402-Pad15)">
-      <node ref="IC402" pin="15"/>
-      <node ref="R405" pin="1"/>
-    </net>
-    <net code="177" name="Net-(IC402-Pad13)">
-      <node ref="R407" pin="1"/>
-      <node ref="IC402" pin="13"/>
-    </net>
-    <net code="178" name="Net-(IC402-Pad12)">
-      <node ref="R404" pin="1"/>
-      <node ref="IC402" pin="12"/>
-    </net>
-    <net code="179" name="Net-(C409-Pad1)">
-      <node ref="C409" pin="1"/>
-      <node ref="Y401" pin="1"/>
-      <node ref="IC402" pin="7"/>
-    </net>
-    <net code="180" name="Net-(C412-Pad1)">
-      <node ref="IC402" pin="24"/>
-      <node ref="R410" pin="2"/>
-      <node ref="C412" pin="1"/>
-      <node ref="D401" pin="2"/>
-    </net>
-    <net code="181" name="Net-(IC401-Pad7)">
-      <node ref="IC401" pin="7"/>
-    </net>
-    <net code="182" name="Net-(IC401-Pad5)">
-      <node ref="IC401" pin="5"/>
-    </net>
-    <net code="183" name="Net-(IC401-Pad4)">
-      <node ref="IC401" pin="4"/>
-    </net>
-    <net code="184" name="Net-(IC401-Pad1)">
-      <node ref="T401" pin="8"/>
-      <node ref="IC401" pin="1"/>
-    </net>
-    <net code="185" name="Net-(IC401-Pad8)">
-      <node ref="IC401" pin="8"/>
-    </net>
-    <net code="186" name="Net-(C401-Pad1)">
-      <node ref="C401" pin="1"/>
-      <node ref="R402" pin="2"/>
-      <node ref="R403" pin="2"/>
-    </net>
-    <net code="187" name="/linetime_ethernet/CT2">
-      <node ref="R403" pin="1"/>
-      <node ref="T401" pin="7"/>
-    </net>
-    <net code="188" name="/linetime_ethernet/CT1">
-      <node ref="T401" pin="2"/>
-      <node ref="R402" pin="1"/>
-    </net>
-    <net code="189" name="Net-(IC401-Pad12)">
+    <net code="177" name="Net-(IC401-Pad12)">
       <node ref="IC401" pin="12"/>
     </net>
-    <net code="190" name="Net-(IC401-Pad11)">
+    <net code="178" name="Net-(IC401-Pad11)">
       <node ref="IC401" pin="11"/>
     </net>
-    <net code="191" name="/linetime_ethernet/LINK_LED">
+    <net code="179" name="/linetime_ethernet/LINK_LED">
       <node ref="IC401" pin="9"/>
       <node ref="IC402" pin="23"/>
     </net>
-    <net code="192" name="Net-(IC401-Pad10)">
+    <net code="180" name="Net-(IC402-Pad19)">
+      <node ref="R411" pin="1"/>
+      <node ref="IC402" pin="19"/>
+    </net>
+    <net code="181" name="Net-(IC401-Pad10)">
       <node ref="R401" pin="1"/>
       <node ref="IC401" pin="10"/>
     </net>
-    <net code="193" name="Net-(IC402-Pad3)">
-      <node ref="IC402" pin="3"/>
-      <node ref="T401" pin="16"/>
+    <net code="182" name="Net-(IC401-Pad8)">
+      <node ref="IC401" pin="8"/>
+    </net>
+    <net code="183" name="Net-(IC401-Pad7)">
+      <node ref="IC401" pin="7"/>
+    </net>
+    <net code="184" name="Net-(C403-Pad1)">
+      <node ref="C403" pin="1"/>
+      <node ref="T401" pin="15"/>
+    </net>
+    <net code="185" name="Net-(IC401-Pad5)">
+      <node ref="IC401" pin="5"/>
+    </net>
+    <net code="186" name="Net-(IC402-Pad20)">
+      <node ref="IC402" pin="20"/>
+      <node ref="R413" pin="1"/>
+    </net>
+    <net code="187" name="Net-(IC402-Pad21)">
+      <node ref="IC402" pin="21"/>
+      <node ref="R412" pin="1"/>
+    </net>
+    <net code="188" name="Net-(IC401-Pad3)">
+      <node ref="T401" pin="3"/>
+      <node ref="IC401" pin="3"/>
+    </net>
+    <net code="189" name="/linetime_ethernet/CT1">
+      <node ref="T401" pin="2"/>
+      <node ref="R402" pin="1"/>
+    </net>
+    <net code="190" name="/linetime_ethernet/CT2">
+      <node ref="T401" pin="7"/>
+      <node ref="R403" pin="1"/>
+    </net>
+    <net code="191" name="Net-(IC401-Pad6)">
+      <node ref="T401" pin="1"/>
+      <node ref="IC401" pin="6"/>
+    </net>
+    <net code="192" name="Net-(IC401-Pad2)">
+      <node ref="IC401" pin="2"/>
+      <node ref="T401" pin="6"/>
+    </net>
+    <net code="193" name="Net-(IC401-Pad1)">
+      <node ref="T401" pin="8"/>
+      <node ref="IC401" pin="1"/>
     </net>
     <net code="194" name="Net-(C404-Pad1)">
       <node ref="T401" pin="10"/>
       <node ref="C404" pin="1"/>
     </net>
-    <net code="195" name="Net-(IC402-Pad6)">
-      <node ref="IC402" pin="6"/>
-      <node ref="T401" pin="9"/>
+    <net code="195" name="Net-(IC401-Pad4)">
+      <node ref="IC401" pin="4"/>
     </net>
-    <net code="196" name="Net-(IC402-Pad5)">
-      <node ref="T401" pin="11"/>
-      <node ref="IC402" pin="5"/>
+    <net code="196" name="Net-(C401-Pad1)">
+      <node ref="R402" pin="2"/>
+      <node ref="R403" pin="2"/>
+      <node ref="C401" pin="1"/>
     </net>
-    <net code="197" name="Net-(C403-Pad1)">
-      <node ref="T401" pin="15"/>
-      <node ref="C403" pin="1"/>
-    </net>
-    <net code="198" name="Net-(IC402-Pad4)">
-      <node ref="IC402" pin="4"/>
-      <node ref="T401" pin="14"/>
-    </net>
-    <net code="199" name="Net-(IC401-Pad3)">
-      <node ref="IC401" pin="3"/>
-      <node ref="T401" pin="3"/>
-    </net>
-    <net code="200" name="Net-(IC401-Pad6)">
-      <node ref="IC401" pin="6"/>
-      <node ref="T401" pin="1"/>
-    </net>
-    <net code="201" name="Net-(IC401-Pad2)">
-      <node ref="IC401" pin="2"/>
-      <node ref="T401" pin="6"/>
-    </net>
-    <net code="202" name="Net-(IC402-Pad17)">
+    <net code="197" name="Net-(IC402-Pad17)">
       <node ref="IC402" pin="17"/>
     </net>
-    <net code="203" name="Net-(T401-Pad13)">
+    <net code="198" name="Net-(IC402-Pad15)">
+      <node ref="R405" pin="1"/>
+      <node ref="IC402" pin="15"/>
+    </net>
+    <net code="199" name="Net-(T401-Pad13)">
       <node ref="T401" pin="13"/>
     </net>
-    <net code="204" name="Net-(T401-Pad12)">
+    <net code="200" name="Net-(T401-Pad12)">
       <node ref="T401" pin="12"/>
     </net>
-    <net code="205" name="Net-(IC402-Pad18)">
+    <net code="201" name="Net-(IC402-Pad18)">
       <node ref="IC402" pin="18"/>
     </net>
-    <net code="206" name="Net-(T401-Pad5)">
+    <net code="202" name="Net-(IC402-Pad13)">
+      <node ref="IC402" pin="13"/>
+      <node ref="R407" pin="1"/>
+    </net>
+    <net code="203" name="Net-(IC402-Pad12)">
+      <node ref="IC402" pin="12"/>
+      <node ref="R404" pin="1"/>
+    </net>
+    <net code="204" name="Net-(T401-Pad5)">
       <node ref="T401" pin="5"/>
     </net>
-    <net code="207" name="Net-(T401-Pad4)">
+    <net code="205" name="Net-(T401-Pad4)">
       <node ref="T401" pin="4"/>
     </net>
-    <net code="208" name="Net-(IC501-Pad15)">
+    <net code="206" name="Net-(IC501-Pad15)">
       <node ref="IC501" pin="15"/>
     </net>
-    <net code="209" name="Net-(IC501-Pad12)">
+    <net code="207" name="Net-(IC501-Pad12)">
       <node ref="IC501" pin="12"/>
     </net>
-    <net code="210" name="Net-(IC501-Pad14)">
+    <net code="208" name="Net-(IC501-Pad14)">
       <node ref="IC501" pin="14"/>
       <node ref="R502" pin="2"/>
     </net>
-    <net code="211" name="Net-(IC501-Pad1)">
+    <net code="209" name="Net-(IC501-Pad1)">
       <node ref="R503" pin="2"/>
       <node ref="IC501" pin="1"/>
     </net>
-    <net code="212" name="Net-(C503-Pad1)">
-      <node ref="R504" pin="1"/>
+    <net code="210" name="Net-(C503-Pad1)">
       <node ref="C503" pin="1"/>
       <node ref="IC501" pin="2"/>
       <node ref="IC501" pin="3"/>
       <node ref="J501" pin="2"/>
+      <node ref="R504" pin="1"/>
     </net>
-    <net code="213" name="Net-(IC602-Pad5)">
+    <net code="211" name="Net-(IC602-Pad5)">
       <node ref="LS601" pin="1"/>
       <node ref="IC602" pin="5"/>
     </net>
-    <net code="214" name="Net-(IC602-Pad8)">
-      <node ref="IC602" pin="8"/>
+    <net code="212" name="Net-(IC602-Pad8)">
       <node ref="LS601" pin="2"/>
+      <node ref="IC602" pin="8"/>
+    </net>
+    <net code="213" name="Net-(IC602-Pad3)">
+      <node ref="R604" pin="2"/>
+      <node ref="IC602" pin="3"/>
+    </net>
+    <net code="214" name="Net-(IC602-Pad4)">
+      <node ref="R603" pin="2"/>
+      <node ref="IC602" pin="4"/>
     </net>
     <net code="215" name="Net-(D601-Pad1)">
-      <node ref="D604" pin="1"/>
-      <node ref="D601" pin="1"/>
       <node ref="D603" pin="1"/>
-      <node ref="Q601" pin="3"/>
+      <node ref="D601" pin="1"/>
+      <node ref="D604" pin="1"/>
       <node ref="D602" pin="1"/>
+      <node ref="Q601" pin="3"/>
     </net>
     <net code="216" name="Net-(D602-Pad2)">
       <node ref="D602" pin="2"/>
@@ -3216,77 +3161,69 @@
       <node ref="IC601" pin="4"/>
     </net>
     <net code="218" name="Net-(D601-Pad2)">
-      <node ref="IC601" pin="3"/>
       <node ref="D601" pin="2"/>
+      <node ref="IC601" pin="3"/>
     </net>
     <net code="219" name="Net-(D603-Pad2)">
       <node ref="IC601" pin="2"/>
       <node ref="D603" pin="2"/>
     </net>
-    <net code="220" name="/linetime_ui/X-">
-      <node ref="IC603" pin="19"/>
-      <node ref="R605" pin="1"/>
-      <node ref="IC601" pin="46"/>
-      <node ref="D606" pin="1"/>
-    </net>
-    <net code="221" name="/linetime_ui/Y+">
-      <node ref="D607" pin="1"/>
-      <node ref="IC601" pin="45"/>
-      <node ref="IC603" pin="15"/>
-    </net>
-    <net code="222" name="/linetime_ui/X+">
+    <net code="220" name="/linetime_ui/X+">
+      <node ref="C610" pin="1"/>
       <node ref="D608" pin="1"/>
       <node ref="IC603" pin="18"/>
       <node ref="IC601" pin="44"/>
-      <node ref="C610" pin="1"/>
     </net>
-    <net code="223" name="Net-(IC602-Pad3)">
-      <node ref="IC602" pin="3"/>
-      <node ref="R604" pin="2"/>
+    <net code="221" name="/linetime_ui/Y-">
+      <node ref="D605" pin="1"/>
+      <node ref="IC601" pin="47"/>
+      <node ref="C611" pin="1"/>
+      <node ref="IC603" pin="16"/>
     </net>
-    <net code="224" name="Net-(C606-Pad2)">
-      <node ref="C606" pin="2"/>
-      <node ref="R604" pin="1"/>
+    <net code="222" name="/linetime_ui/X-">
+      <node ref="IC603" pin="19"/>
+      <node ref="D606" pin="1"/>
+      <node ref="IC601" pin="46"/>
+      <node ref="R605" pin="1"/>
     </net>
-    <net code="225" name="Net-(C604-Pad2)">
-      <node ref="C604" pin="2"/>
+    <net code="223" name="/linetime_ui/Y+">
+      <node ref="IC601" pin="45"/>
+      <node ref="IC603" pin="15"/>
+      <node ref="D607" pin="1"/>
+    </net>
+    <net code="224" name="Net-(C604-Pad2)">
       <node ref="R603" pin="1"/>
+      <node ref="C604" pin="2"/>
     </net>
-    <net code="226" name="Net-(IC602-Pad4)">
-      <node ref="R603" pin="2"/>
-      <node ref="IC602" pin="4"/>
+    <net code="225" name="Net-(C606-Pad2)">
+      <node ref="R604" pin="1"/>
+      <node ref="C606" pin="2"/>
     </net>
-    <net code="227" name="Net-(Q601-Pad1)">
-      <node ref="R601" pin="1"/>
+    <net code="226" name="Net-(Q601-Pad1)">
       <node ref="Q601" pin="1"/>
+      <node ref="R601" pin="1"/>
     </net>
-    <net code="228" name="Net-(IC603-Pad5)">
-      <node ref="R605" pin="2"/>
+    <net code="227" name="Net-(IC603-Pad5)">
       <node ref="IC603" pin="5"/>
+      <node ref="R605" pin="2"/>
     </net>
-    <net code="229" name="Net-(IC601-Pad33)">
+    <net code="228" name="Net-(IC601-Pad33)">
       <node ref="IC601" pin="33"/>
     </net>
-    <net code="230" name="Net-(IC601-Pad39)">
+    <net code="229" name="Net-(IC601-Pad39)">
       <node ref="IC601" pin="39"/>
     </net>
-    <net code="231" name="/linetime_ui/Y-">
-      <node ref="IC603" pin="16"/>
-      <node ref="IC601" pin="47"/>
-      <node ref="D605" pin="1"/>
-      <node ref="C611" pin="1"/>
-    </net>
-    <net code="232" name="Net-(IC601-Pad34)">
+    <net code="230" name="Net-(IC601-Pad34)">
       <node ref="R602" pin="1"/>
       <node ref="IC601" pin="34"/>
     </net>
-    <net code="233" name="Net-(IC603-Pad12)">
-      <node ref="IC603" pin="12"/>
-    </net>
-    <net code="234" name="Net-(IC603-Pad10)">
+    <net code="231" name="Net-(IC603-Pad10)">
       <node ref="IC603" pin="10"/>
     </net>
-    <net code="235" name="Net-(IC602-Pad2)">
+    <net code="232" name="Net-(IC603-Pad12)">
+      <node ref="IC603" pin="12"/>
+    </net>
+    <net code="233" name="Net-(IC602-Pad2)">
       <node ref="IC602" pin="2"/>
     </net>
   </nets>

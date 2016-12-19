@@ -1,0 +1,11 @@
+mains lpf
+
+V1 src 0 DC 1.65 AC 8.48
+R1 src filt 100R
+C1 filt 0 1n
+R2 filt out 5kR
+R3 out 0 1kR
+
+.ac dec 100 1e1 1e2
+
+.end
