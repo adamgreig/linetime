@@ -1,0 +1,96 @@
+name: Linetime
+lsefreq: 0
+hsefreq: 26000000
+voltage: 3.3
+mcutype: STM32F767xx
+default: input, pushpull, starthigh, pullup, highspeed
+pins:
+  # SWD
+  SWDIO: pa13, af0, pulldown
+  SWCLK: pa14, af0, pulldown
+
+  # Ethernet RMII
+  RMII_MDIO: pa2, af11
+  RMII_MDC: pc1, af11
+  RMII_REF_CLK: pa1, af11
+  RMII_CRS_DV: pa7, af11
+  RMII_RXD0: pc4, af11
+  RMII_RXD1: pc5, af11
+  RMII_TX_EN: pg11, af11
+  RMII_TXD0: pg13, af11
+  RMII_TXD1: pg14, af11
+
+  # LCD
+  LCD_VSYNC: pa4, af14
+  LCD_HSYNC: pc6, af14
+  LCD_DOTCLK: pe14, af14
+  LCD_DE: pe13, af14
+  LCD_R7: pe15, af14
+  LCD_R6: pb1, af9
+  LCD_R5: pa12, af14
+  LCD_R4: pa11, af14
+  LCD_R3: pb0, af9
+  LCD_R2: pc10, af14
+  LCD_G7: pg8, af14
+  LCD_G6: pc7, af14
+  LCD_G5: pb11, af14
+  LCD_G4: pb10, af14
+  LCD_G3: pe11, af14
+  LCD_G2: pa6, af14
+  LCD_B7: pb9, af14
+  LCD_B6: pb8, af14
+  LCD_B5: pa3, af14
+  LCD_B4: pe12, af14
+  LCD_B3: pd10, af14
+  LCD_B2: pg10, af14
+  LCD_RST: pe5, output
+  LCD_DCX: pe3, output
+  LCD_SDA: pe6, af5
+  LCD_SCL: pe2, af5
+  LCD_CS: pe4, output
+  LCD_BACKLIGHT: pd12, af2
+
+  # Touchscreen controller (also ROM SPI bus)
+  TOUCH_INT: pf5
+  TOUCH_CS: pf6, output
+  TOUCH_SCK: pf7, af5
+  TOUCH_SDO: pf8, af5
+  TOUCH_SDI: pf9, af5
+  EEPROM_CS: pf10, output
+
+  # Sounder
+  SOUNDER: pa5, analog
+  SOUNDER_SD: pb2, output
+
+  # Battery management
+  BATT_I_CHG: pf3, floating, analog
+  BATT_V_MON: pf4, floating, analog
+  BATT_CHG: pb12
+  BATT_PGOOD: pb13
+  BATT_CE: pb14, output
+
+  # GPS
+  GPS_RXD: pd5, af7
+  GPS_TXD: pd6, af7
+  GPS_RESET: pd4, output
+  GPS_PPS: pb3, floating, af1
+
+  # CS2100 PLL
+  CS2100_SCL: pa8, af4
+  CS2100_SDA: pc9, af4
+  CS2100_CLK: ph0, floating
+
+  # Mains
+  MAINS_BIAS: pc3, floating, analog
+  MAINS_WAVE: pc2, floating, analog
+  MAINS_ZC: pa15, af1
+
+  # LEDs
+  LED_RED: pb5, output, startlow
+  LED_YLW: pb6, output, startlow
+  LED_GRN: pb7, output, startlow
+
+  # MicroSD card
+  USD_CMD: pd2, af12
+  USD_CLK: pc12, af12
+  USD_DAT0: pc8, af12
