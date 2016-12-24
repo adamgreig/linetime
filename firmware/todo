@@ -1,22 +1,22 @@
 # Firmware Outline/To-Do
 
-* GPS set-up:
-    * Disable NMEA messages
-    * Configure for timing mode
-    * Generate some TIMEPULSE1 freq (16MHz? some even multiple of 48MHz?)
-    * Generaet 1PPS TIMEPULSE2
-    * Other settings (static location, antenna power, UTC aligned PPS, etc)
-    * Request/parse UTC time information
+x * GPS set-up:
+x    * Disable NMEA messages
+x    * Configure for timing mode
+x    * Generate some TIMEPULSE1 freq (1MHz? some even multiple of 48MHz?)
+x    * Generaet 1PPS TIMEPULSE2
+x    * Other settings (static location, antenna power, UTC aligned PPS, etc)
+x    * Request/parse UTC time information
 
 * System clock set-up:
-    * Program CS2100 to generate 10MHz or 26MHz reference
-    * Enable HSE, wait HSE RDY
-    * Swap SW to HSI
-    * Disable PLL
-    * Swap PLL src to HSE
-    * Reconfigure PLL M value to HSE/2
-    * Enable PLL, wait PLL RDY
-    * Swap SW to PLL
+x    * Program CS2100 to generate 26MHz reference
+x    * Enable HSE, wait HSE RDY
+x    * Swap SW to HSI
+x    * Disable PLL
+x    * Swap PLL src to HSE
+x    * Reconfigure PLL M value to HSE/2 = 13
+x    * Enable PLL, wait PLL RDY
+x    * Swap SW to PLL
 
 * Mains:
     * Set up TIM2 for fast operation, timestamp CH1 and CH2 edges

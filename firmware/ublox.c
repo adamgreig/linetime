@@ -45,7 +45,7 @@
 #define NMEA_RMC 0x04
 #define NMEA_VTG 0x05
 
-SerialDriver* ublox_seriald;
+static SerialDriver* ublox_seriald;
 
 /* UBX Decoding State Machine States */
 typedef enum {
@@ -367,7 +367,7 @@ static SerialConfig serial_cfg = {
 static void ublox_error(const char* err)
 {
     /* TODO: fill in error handler */
-    (void)err;
+    chSysHalt(err);
 }
 
 /* Run the Fletcher-8 checksum, initialised to chk, over n bytes of buf */
@@ -710,7 +710,7 @@ static bool ublox_configure_tp5(void)
     tp5.id = UBX_CFG_TP5;
     tp5.length = sizeof(tp5.payload);
 
-    /* Enable 16MHz output on TIMEPULSE,
+    /* Enable 1MHz output on TIMEPULSE,
      * only when GNSS lock is valid.
      */
     tp5.tp_idx = 0;
@@ -718,7 +718,7 @@ static bool ublox_configure_tp5(void)
     tp5.ant_cable_delay = 15;
     tp5.freq_period = 0;
     tp5.pulse_len_ratio = 1000;
-    tp5.freq_period_lock = 16000000;
+    tp5.freq_period_lock = 1000000;
     tp5.pulse_len_ratio_lock = 1000;
     tp5.flags = (
         UBX_CFG_TP5_FLAGS_ACTIVE(true)              |
