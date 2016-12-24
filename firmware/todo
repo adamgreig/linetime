@@ -22,15 +22,18 @@ x    * Swap SW to PLL
     * Set up TIM2 for fast operation, timestamp CH1 and CH2 edges
     * Set up ADC1 for constantly measuring MAINS_WAVE
     * Set up ADC2 for occasional measurements of MAINS_BIAS
-    * Compute mains ZC timestamp, frequency, RMS
+    * Compute mains ZC timestamp, frequency, RMS, subsampled waveform
 
 * Ethernet:
     * Read MAC address from ROM
-    * LWIP to send TCP (or UDP?) packets
+    * LWIP to send TCP packets
 
 * MicroSD:
-    * Read/write packet buffer to SD card
-    * Or store in RAM until we run out of buffer room, then save buffers
+    * Store a 16kB buffer in ram which we add to from the ZC and pop from
+      during ethernet write operations (1/s)
+    * Write the buffer to the SD card if it gets full
+    * When we have working ethernet again, read buffers from SD card to
+      transmit first, quickly
 
 * Battery:
     * ADC3 to monitor charge current and battery voltage
@@ -42,10 +45,10 @@ x    * Swap SW to PLL
     * SPI config/initialisation
     * TFT LCD peripheral
 
-* Touch screen controller:
-    * Worry about this later
-    * SPI streaming touch events
-
 * Sounder:
     * Worry about this later
     * DAC to amp
+
+* Touch screen controller:
+    * Worry about this much later
+    * SPI streaming touch events
