@@ -46,6 +46,7 @@
 #define NMEA_VTG 0x05
 
 static SerialDriver* ublox_seriald;
+struct ublox_tp_time_t ublox_tp_time;
 
 /* UBX Decoding State Machine States */
 typedef enum {
@@ -342,6 +343,8 @@ typedef struct __attribute__((packed)) {
     };
     uint8_t ck_a, ck_b;
 } ubx_tim_tp_t;
+#define UBX_TIM_TP_FLAGS_TIMEBASE_UTC   (1<<0)
+#define UBX_TIM_TP_FLAGS_UTC_AVAILABLE  (1<<1)
 
 static uint16_t ublox_fletcher_8(uint16_t chk, uint8_t *buf, uint8_t n);
 static void ublox_checksum(uint8_t *buf);
@@ -537,7 +540,17 @@ static void ublox_state_machine(uint8_t b)
                 case UBX_TIM:
                     if(id == UBX_TIM_TP) {
                         memcpy(tim_tp.payload, payload, length);
-                        /* TODO: handle receiving a TP */
+                        if(tim_tp.flags & UBX_TIM_TP_FLAGS_TIMEBASE_UTC &&
+                           tim_tp.flags & UBX_TIM_TP_FLAGS_UTC_AVAILABLE)
+                        {
+                            ublox_tp_time.valid = true;
+                            ublox_tp_time.tow_ms = tim_tp.tow_ms;
+                            ublox_tp_time.tow_sub_ms = tim_tp.tow_sub_ms;
+                            ublox_tp_time.week = tim_tp.week;
+                            /* TODO: add synchronisation (events?) */
+                        } else {
+                            ublox_tp_time.valid = false;
+                        }
                     } else {
                         ublox_error("unknown tim msg");
                     }
@@ -810,7 +823,13 @@ static THD_FUNCTION(ublox_thd, arg) {
 }
 
 void ublox_init(SerialDriver* seriald) {
+    /* Store a reference to the serial driver to use */
     ublox_seriald = seriald;
+
+    /* Ensure the time is not yet valid */
+    ublox_tp_time.valid = false;
+
+    /* Start up the ublox processing thread */
     chThdCreateStatic(ublox_thd_wa, sizeof(ublox_thd_wa), NORMALPRIO,
                       ublox_thd, NULL);
 }

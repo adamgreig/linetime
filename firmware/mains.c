@@ -6,16 +6,47 @@
 #include "hal.h"
 
 #include "mains.h"
+#include "ublox.h"
 
+struct mains_cycle {
+    /* 192MHz timer value when ZC at start of cycle detected */
+    gptcnt_t zc_timestamp;
+
+    /* 192MHz timer value at time of PPS pulse most recently preceding ZC */
+    gptcnt_t pps_timestamp;
+
+    /* ADC sample counter value at time of ZC */
+    gptcnt_t adc_timestamp;
+
+    /* Period until next ZC, in cycles of 192MHz timer */
+    uint32_t period;
+
+    /* ADC readings until next ZC (at most 2048 of them, expect around 1000) */
+    adcsample_t waveform[2048];
+    gptcnt_t waveform_len;
+
+    /* Recent ADC reading of mains bias voltage */
+    adcsample_t mains_bias;
+};
+
+/* Store information on the current and previous mains cycles */
+static struct mains_cycle current_mains_cycle, prev_mains_cycle;
 
 static void mains_adcs_init(void);
 static void mains_timers_init(void);
 static adcsample_t mains_read_bias(void);
 static void mains_error(const char* err);
+static void mains_gpt2_int(GPTDriver* gptd);
 
 /* Store the DMA'd ADC samples from the mains waveform */
-#define MAINS_WAVE_BUFLEN (8192)
+#define MAINS_WAVE_BUFLEN (4096)
 static adcsample_t mains_wave_buf[MAINS_WAVE_BUFLEN];
+
+/* Store the TIM2 count at the last PPS */
+static gptcnt_t pps_timestamp;
+
+/* Store a recent mains bias reading */
+static adcsample_t mains_bias;
 
 static void mains_error(const char* err)
 {
@@ -59,7 +90,7 @@ static void mains_timers_init()
      */
     static const GPTConfig gpt2_cfg = {
         .frequency = 192000000,
-        .callback = NULL,
+        .callback = mains_gpt2_int,
         .cr2 = 0,
         .dier = STM32_TIM_DIER_CC1IE | STM32_TIM_DIER_CC2IE,
     };
@@ -122,10 +153,81 @@ static void mains_adcs_init()
     adcStart(&ADCD1, NULL);
     adcStart(&ADCD2, NULL);
 
-    /* Start the ADC conversions. Since it's clocked by TIM3 CC4, it won't
+    /* Start the ADC1 conversions. Since it's clocked by TIM3 CC4, it won't
      * actually convert until the timer is started.
      */
     adcStartConversion(&ADCD1, &adc1_grp, mains_wave_buf, MAINS_WAVE_BUFLEN);
+}
+
+/* Handle TIM2 input capture events */
+static void mains_gpt2_int(GPTDriver* gptd)
+{
+    (void)gptd;
+
+    /* Handle mains zero crossing */
+    if(GPTD2.tim->SR & STM32_TIM_SR_CC1IF) {
+        /* Record current timestamps */
+        current_mains_cycle.adc_timestamp = GPTD9.tim->CNT;
+        current_mains_cycle.zc_timestamp = GPTD2.tim->CCR[0];
+        current_mains_cycle.pps_timestamp = pps_timestamp;
+
+        /* Update period and ADC samples of previous cycle */
+        prev_mains_cycle.period =
+            current_mains_cycle.zc_timestamp - prev_mains_cycle.zc_timestamp;
+        prev_mains_cycle.waveform_len =
+            current_mains_cycle.adc_timestamp - prev_mains_cycle.adc_timestamp;
+        prev_mains_cycle.waveform_len %= MAINS_WAVE_BUFLEN;
+
+        /* Copy waveform of previous cycle if it will fit */
+        prev_mains_cycle.mains_bias = mains_bias;
+        size_t start = prev_mains_cycle.adc_timestamp;
+        size_t end = start + prev_mains_cycle.waveform_len;
+        size_t max_len = sizeof(prev_mains_cycle.waveform)/sizeof(adcsample_t);
+        if(prev_mains_cycle.waveform_len < max_len) {
+            if(end < MAINS_WAVE_BUFLEN) {
+                size_t len = end - start;
+                memcpy(prev_mains_cycle.waveform, &mains_wave_buf[start], len);
+            } else {
+                size_t len1 = MAINS_WAVE_BUFLEN - start;
+                memcpy(prev_mains_cycle.waveform, &mains_wave_buf[start], len1);
+                size_t len2 = end - MAINS_WAVE_BUFLEN;
+                memcpy(&prev_mains_cycle.waveform[len1], mains_wave_buf, len2);
+            }
+        } else {
+            prev_mains_cycle.waveform_len = 0;
+        }
+
+        /* Submit the now-complete previous cycle for processing */
+        /* TODO: send the mains_cycle struct somewhere and:
+         * * resolve its timestamp
+         * * compute the RMS
+         * * compute the frequency
+         * * subsample the waveform
+         * * add to transmission queue
+         */
+
+        /* Copy relevant bits of current_mains into prev_mains */
+        prev_mains_cycle.adc_timestamp = current_mains_cycle.adc_timestamp;
+        prev_mains_cycle.pps_timestamp = current_mains_cycle.pps_timestamp;
+        prev_mains_cycle.zc_timestamp = current_mains_cycle.zc_timestamp;
+    }
+
+    /* Handle PPS */
+    if(GPTD2.tim->SR & STM32_TIM_SR_CC2IF) {
+        /* Just save the timer value, when the next TP message comes in
+         * we'll use it to resolve the UTC time this corresponded to.
+         */
+        pps_timestamp = GPTD2.tim->CCR[1];
+    }
+}
+
+static THD_WORKING_AREA(mains_bias_thd_wa, 128);
+static THD_FUNCTION(mains_bias_thd, arg) {
+    (void)arg;
+    while(true) {
+        mains_bias = mains_read_bias();
+        chThdSleepMilliseconds(100);
+    }
 }
 
 void mains_init()
@@ -136,6 +238,7 @@ void mains_init()
     /* Kick it all off */
     mains_timers_init();
 
-    /* uh, whatever */
-    mains_read_bias();
+    /* Start a thread to constantly update the mains bias value */
+    chThdCreateStatic(mains_bias_thd_wa, sizeof(mains_bias_thd_wa),
+                      NORMALPRIO, mains_bias_thd, NULL);
 }
