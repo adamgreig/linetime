@@ -8,7 +8,7 @@ x    * Generaet 1PPS TIMEPULSE2
 x    * Other settings (static location, antenna power, UTC aligned PPS, etc)
 x    * Request/parse UTC time information
 
-* System clock set-up:
+x * System clock set-up:
 x    * Program CS2100 to generate 26MHz reference
 x    * Enable HSE, wait HSE RDY
 x    * Swap SW to HSI
@@ -19,35 +19,35 @@ x    * Enable PLL, wait PLL RDY
 x    * Swap SW to PLL
 
 * Mains:
-    * Set up TIM2 for fast operation, timestamp CH1 and CH2 edges
-    * Set up ADC1 for constantly measuring MAINS_WAVE
-    * Set up ADC2 for occasional measurements of MAINS_BIAS
+x    * Set up TIM2 for fast operation, timestamp CH1 and CH2 edges
+x    * Set up ADC1 for constantly measuring MAINS_WAVE
+x    * Set up ADC2 for occasional measurements of MAINS_BIAS
     * Compute mains ZC timestamp, frequency, RMS, subsampled waveform
 
-* Ethernet:
-    * Read MAC address from ROM
-    * LWIP to send TCP packets
-
-* MicroSD:
-    * Store a 16kB buffer in ram which we add to from the ZC and pop from
+* MicroSD / Queue:
+    * Store a 16kB buffer in ram which we add to from the mains and pop from
       during ethernet write operations (1/s)
     * Write the buffer to the SD card if it gets full
     * When we have working ethernet again, read buffers from SD card to
       transmit first, quickly
+
+* Ethernet:
+    * Read MAC address from ROM
+    * LWIP to send TCP packets
 
 * Battery:
     * ADC3 to monitor charge current and battery voltage
     * Cycle CE as required
 
 * LCD:
-    * Worry about this later
     * Backlight PWM
     * SPI config/initialisation
     * TFT LCD peripheral
+    * UI stuff...
 
 * Sounder:
-    * Worry about this later
     * DAC to amp
+    * Tone generation
 
 * Touch screen controller:
     * Worry about this much later
