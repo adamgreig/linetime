@@ -20,7 +20,7 @@ pins:
   RMII_TXD0: pg13, af11
   RMII_TXD1: pg14, af11
 
-  # LCD
+  # LCD on TFT-LCD controller and on SPI4, backlight PWM on TIM4 ch1
   LCD_VSYNC: pa4, af14
   LCD_HSYNC: pc6, af14
   LCD_DOTCLK: pe14, af14
@@ -50,7 +50,7 @@ pins:
   LCD_CS: pe4, output
   LCD_BACKLIGHT: pd12, af2
 
-  # Touchscreen controller (also ROM SPI bus)
+  # Touchscreen controller (also ROM SPI bus) on SPI5
   TOUCH_INT: pf5
   TOUCH_CS: pf6, output
   TOUCH_SCK: pf7, af5
@@ -62,25 +62,25 @@ pins:
   SOUNDER: pa5, analog
   SOUNDER_SD: pb2, output
 
-  # Battery management
+  # Battery management on ADC3
   BATT_I_CHG: pf3, floating, analog
   BATT_V_MON: pf4, floating, analog
   BATT_CHG: pb12
   BATT_PGOOD: pb13
   BATT_CE: pb14, output
 
-  # GPS
+  # GPS (PPS on TIM2 ch2)
   GPS_RXD: pd5, af7
   GPS_TXD: pd6, af7
   GPS_RESET: pd4, output
   GPS_PPS: pb3, floating, af1
 
-  # CS2100 PLL
+  # CS2100 PLL on I2C3
   CS2100_SCL: pa8, af4
   CS2100_SDA: pc9, af4
   CS2100_CLK: ph0, floating
 
-  # Mains
+  # Mains on ADC1 and ADC2 and TIM2 ch1
   MAINS_BIAS: pc3, floating, analog
   MAINS_WAVE: pc2, floating, analog
   MAINS_ZC: pa15, af1

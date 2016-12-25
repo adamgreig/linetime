@@ -765,7 +765,6 @@ static bool ublox_configure_msg(void)
 {
     ubx_cfg_msg_t msg = {0};
 
-    /* Enable NAV UBX messages */
     msg.sync1 = UBX_SYNC1;
     msg.sync2 = UBX_SYNC2;
     msg.class = UBX_CFG;
