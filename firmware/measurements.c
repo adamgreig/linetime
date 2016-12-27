@@ -13,12 +13,16 @@ static void measurements_adcs_init(void);
 static void measurements_timers_init(void);
 static adcsample_t measurements_read_mains_bias(void);
 static void measurements_error(const char* err);
-static void measurements_gpt2_int(GPTDriver* gptd);
+static void measurements_gpt2_cb(GPTDriver* gptd);
+static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n);
 static void measurements_handle_zc(void);
 static void measurements_handle_pps(void);
 
-/* Store the DMA'd ADC samples from the mains waveform */
-#define MAINS_WAVE_BUFLEN (8192)
+/* Store the DMA'd ADC samples from the mains waveform.
+ * Note you have to update the size of the buffer in struct mains_waveform
+ * to 0.05 * MAINS_WAVE_BUFLEN if you change it here.
+ */
+#define MAINS_WAVE_BUFLEN (5120)
 static adcsample_t mains_wave_buf[MAINS_WAVE_BUFLEN];
 
 /* High speed timer frequency */
@@ -97,7 +101,7 @@ static void measurements_timers_init()
      */
     static const GPTConfig gpt2_cfg = {
         .frequency = TIMER_FREQ,
-        .callback = measurements_gpt2_int,
+        .callback = measurements_gpt2_cb,
         .cr2 = 0,
         .dier = STM32_TIM_DIER_CC1IE | STM32_TIM_DIER_CC2IE,
     };
@@ -151,7 +155,7 @@ static void measurements_adcs_init()
     static const ADCConversionGroup adc1_grp = {
         .circular = true,
         .num_channels = 1,
-        .end_cb = NULL,
+        .end_cb = measurements_adc_cb,
         .error_cb = NULL,
         .cr1 = 0,
         .cr2 = ADC_CR2_EXTEN_RISING | ADC_CR2_EXTSEL_SRC(6),
@@ -169,6 +173,37 @@ static void measurements_adcs_init()
      * actually being converting until the timer is started.
      */
     adcStartConversion(&ADCD1, &adc1_grp, mains_wave_buf, MAINS_WAVE_BUFLEN);
+}
+
+static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
+{
+    /* TODO get a mains_waveform struct from a queue or whatever */
+    struct mains_waveform waveform;
+
+    /* Get current timestamp and most recent PPS timestamp */
+    uint64_t delta_ticks    = (GPTD2->CNT) - prev_pps.timestamp;
+    uint64_t delta_sub_ms   = (delta_ticks<<32) / (TIME_FREQ / 1000);
+    uint64_t utc_tow_sub_ms = prev_pps.utc_tow_sub_ms + delta_sub_ms;
+    uint16_t utc_week       = prev_pps.utc_week;
+
+    /* Check buffers are the right length */
+    chDbgAssert(n == MAINS_WAVE_BUFLEN/2,
+                "Buffer incorrect length");
+    chDbgAssert(n/10 == sizeof(waveform.waveform)/sizeof(int16_t),
+                "Buffer too long for struct mains_waveform");
+
+    /* Grab a copy of the mains bias so it doesn't change inside this buffer */
+    adcsample_t _mains_bias = mains_bias;
+
+    /* Subsample the waveform (we run high speed for good RMS accuracy,
+     * but don't want that much data on the server really
+     */
+    size_t i;
+    for(i=0; i<n/10; i++) {
+        waveform.waveform[i] = (int16_t)buf[i*10] - _mains_bias;
+    }
+
+    /* TODO submit the struct mains_waveform to a queue. */
 }
 
 static void measurements_handle_zc()
@@ -275,7 +310,7 @@ static void measurements_handle_pps()
 }
 
 /* Handle TIM2 input capture events */
-static void measurements_gpt2_int(GPTDriver* gptd)
+static void measurements_gpt2_cb(GPTDriver* gptd)
 {
     (void)gptd;
 

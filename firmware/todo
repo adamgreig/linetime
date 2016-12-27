@@ -22,7 +22,8 @@ x    * Swap SW to PLL
 x    * Set up TIM2 for fast operation, timestamp CH1 and CH2 edges
 x    * Set up ADC1 for constantly measuring MAINS_WAVE
 x    * Set up ADC2 for occasional measurements of MAINS_BIAS
-    * Compute mains ZC timestamp, frequency, RMS, subsampled waveform
+x    * Compute mains ZC timestamp, frequency, RMS, subsampled waveform
+x    * On mains adc half/full interrupts, timestamp, subsample and enqueue waveform
 
 * MicroSD / Queue:
     * Store a 16kB buffer in ram which we add to from the mains and pop from
