@@ -3,7 +3,7 @@
 
 #include "ublox.h"
 #include "cs2100.h"
-#include "mains.h"
+#include "measurements.h"
 
 int main(void)
 {
@@ -14,7 +14,7 @@ int main(void)
     cs2100_configure(&I2CD3);
     cs2100_set_pll();
 
-    mains_init();
+    measurements_init();
 
     while(true) {
         chThdSleep(TIME_INFINITE);

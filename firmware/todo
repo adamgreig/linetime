@@ -34,6 +34,10 @@ x    * Set up ADC2 for occasional measurements of MAINS_BIAS
 * Ethernet:
     * Read MAC address from ROM
     * LWIP to send TCP packets
+    * Send the continuous ADC buffer every half-full interrupt,
+      perhaps subsampled? and perhaps with a UTC timestamp for the start?
+    * Send each cycle event (rms, freq, timestamp)
+    * HTTP to u-Blox AssistNow Online and send to ublox because hey why not
 
 * Battery:
     * ADC3 to monitor charge current and battery voltage

@@ -29,24 +29,19 @@
 #define NMEA_CLASS 0xF0
 
 /* Selection of UBX IDs */
-#define UBX_CFG_PRT  0x00
-#define UBX_CFG_MSG  0x01
-#define UBX_CFG_TP5  0x31
-#define UBX_CFG_NAV5 0x24
-#define UBX_CFG_RATE 0x08
-#define UBX_CFG_GNSS 0x3E
-#define UBX_CFG_SBAS 0x16
-#define UBX_NAV_PVT  0x07
-#define UBX_TIM_TP   0x01
-#define NMEA_GGA 0x00
-#define NMEA_GLL 0x01
-#define NMEA_GSA 0x02
-#define NMEA_GSV 0x03
-#define NMEA_RMC 0x04
-#define NMEA_VTG 0x05
+#define UBX_CFG_PRT     0x00
+#define UBX_CFG_MSG     0x01
+#define UBX_CFG_TP5     0x31
+#define UBX_CFG_NAV5    0x24
+#define UBX_CFG_RATE    0x08
+#define UBX_CFG_GNSS    0x3E
+#define UBX_CFG_SBAS    0x16
+#define UBX_NAV_PVT     0x07
+#define UBX_NAV_TIMELS  0x26
+#define UBX_TIM_TP      0x01
 
 static SerialDriver* ublox_seriald;
-struct ublox_tp_time_t ublox_tp_time;
+struct ublox_tp_time_t ublox_upcoming_tp_time;
 
 /* UBX Decoding State Machine States */
 typedef enum {
@@ -165,7 +160,7 @@ typedef struct __attribute__((packed)) {
         struct {
             uint8_t tp_idx;
             uint8_t version;
-            uint16_t reserved1;
+            uint8_t reserved1[2];
             int16_t ant_cable_delay;
             int16_t rf_group_delay;
             uint32_t freq_period;
@@ -178,15 +173,18 @@ typedef struct __attribute__((packed)) {
     };
     uint8_t ck_a, ck_b;
 } ubx_cfg_tp5_t;
-#define UBX_CFG_TP5_FLAGS_ACTIVE(x)             ((x<<0)&1)
-#define UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ(x)     ((x<<1)&2)
-#define UBX_CFG_TP5_FLAGS_LOCKED_OTHER_SET(x)   ((x<<2)&4)
-#define UBX_CFG_TP5_FLAGS_IS_FREQ(x)            ((x<<3)&8)
-#define UBX_CFG_TP5_FLAGS_IS_LENGTH(x)          ((x<<4)&16)
-#define UBX_CFG_TP5_FLAGS_ALIGN_TO_TOW(x)       ((x<<5)&32)
-#define UBX_CFG_TP5_FLAGS_POLARITY(x)           ((x<<6)&64)
-#define UBX_CFG_TP5_FLAGS_GRID_UTC_GPS(x)       ((x<<7)&0x780)
-#define UBX_CFG_TP5_FLAGS_SYNC_MODE(x)          ((x<<11)&0x3800)
+#define UBX_CFG_TP5_FLAGS_ACTIVE                (1<<0)
+#define UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ        (1<<1)
+#define UBX_CFG_TP5_FLAGS_LOCKED_OTHER_SET      (1<<2)
+#define UBX_CFG_TP5_FLAGS_IS_FREQ               (1<<3)
+#define UBX_CFG_TP5_FLAGS_IS_LENGTH             (1<<4)
+#define UBX_CFG_TP5_FLAGS_ALIGN_TO_TOW          (1<<5)
+#define UBX_CFG_TP5_FLAGS_POLARITY              (1<<6)
+#define UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_UTC     (0<<7)
+#define UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_GPS     (1<<7)
+#define UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_GLONASS (2<<7)
+#define UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_BEIDOU  (3<<7)
+#define UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_GALILEO (4<<7)
 
 /* UBX-CFG-SBAS
  * SBAS configuration
@@ -324,6 +322,50 @@ typedef struct __attribute__((packed)) {
     uint8_t ck_a, ck_b;
 } ubx_nav_pvt_t;
 
+/* UBX-NAV-TIMELS
+ * Contains information about any upcoming leap seconds.
+ */
+typedef struct __attribute__((packed)) {
+    uint8_t sync1, sync2, class, id;
+    uint16_t length;
+    union {
+        uint8_t payload[24];
+        struct {
+            uint32_t i_tow;
+            uint8_t version;
+            uint8_t reserved1[3];
+            uint8_t src_of_curr_ls;
+            int8_t curr_ls;
+            uint8_t src_of_ls_change;
+            int8_t ls_change;
+            int32_t time_to_ls_event;
+            uint16_t date_of_ls_gps_wn;
+            uint16_t date_of_ls_gps_dn;
+            uint8_t reserved2[3];
+            uint8_t valid;
+        } __attribute__((packed));
+    };
+    uint8_t ck_a, ck_b;
+} ubx_nav_timels_t;
+#define UBX_NAV_TIMELS_VALID_VALID_CURR_LS          (1<<0)
+#define UBX_NAV_TIMELS_VALID_VALID_TIME_TO_LS_EVENT (1<<1)
+#define UBX_NAV_TIMELS_CURR_SRC_DEFAULT             (0)
+#define UBX_NAV_TIMELS_CURR_SRC_GPS_VS_GLONASS      (1)
+#define UBX_NAV_TIMELS_CURR_SRC_GPS                 (2)
+#define UBX_NAV_TIMELS_CURR_SRC_SBAS                (3)
+#define UBX_NAV_TIMELS_CURR_SRC_BEIDOU              (4)
+#define UBX_NAV_TIMELS_CURR_SRC_GALILEO             (5)
+#define UBX_NAV_TIMELS_CURR_SRC_AIDED_DATA          (6)
+#define UBX_NAV_TIMELS_CURR_SRC_CONFIGURATION       (7)
+#define UBX_NAV_TIMELS_CURR_SRC_UNKNOWN             (255)
+#define UBX_NAV_TIMELS_CHANGE_SRC_NO_SOURCE         (0)
+#define UBX_NAV_TIMELS_CHANGE_SRC_GPS               (2)
+#define UBX_NAV_TIMELS_CHANGE_SRC_SBAS              (3)
+#define UBX_NAV_TIMELS_CHANGE_SRC_BEIDOU            (4)
+#define UBX_NAV_TIMELS_CHANGE_SRC_GALILEO           (5)
+#define UBX_NAV_TIMELS_CHANGE_SRC_GLONASS           (6)
+
+
 /* UBX-TIM-TP
  * Timepulse timedata
  */
@@ -338,13 +380,25 @@ typedef struct __attribute__((packed)) {
             int32_t q_err;
             uint16_t week;
             uint8_t flags;
-            uint8_t reserved1;
+            uint8_t ref_info;
         } __attribute__((packed));
     };
     uint8_t ck_a, ck_b;
 } ubx_tim_tp_t;
-#define UBX_TIM_TP_FLAGS_TIMEBASE_UTC   (1<<0)
-#define UBX_TIM_TP_FLAGS_UTC_AVAILABLE  (1<<1)
+#define UBX_TIM_TP_FLAGS_TIMEBASE_UTC               (1<<0)
+#define UBX_TIM_TP_FLAGS_UTC_AVAILABLE              (1<<1)
+#define UBX_TIM_TP_REF_INFO_TIME_REF_GNSS_GPS       (0<<0)
+#define UBX_TIM_TP_REF_INFO_TIME_REF_GNSS_GLONASS   (1<<0)
+#define UBX_TIM_TP_REF_INFO_TIME_REF_GNSS_BAIDOU    (2<<0)
+#define UBX_TIM_TP_REF_INFO_TIME_REF_GNSS_UNKNOWN   (15<<0)
+#define UBX_TIM_TP_REF_INFO_UTC_STANDARD_NA         (0<<4)
+#define UBX_TIM_TP_REF_INFO_UTC_STANDARD_CRL        (1<<4)
+#define UBX_TIM_TP_REF_INFO_UTC_STANDARD_NIST       (2<<4)
+#define UBX_TIM_TP_REF_INFO_UTC_STANDARD_USNO       (3<<4)
+#define UBX_TIM_TP_REF_INFO_UTC_STANDARD_BIPM       (4<<4)
+#define UBX_TIM_TP_REF_INFO_UTC_STANDARD_EURO       (5<<4)
+#define UBX_TIM_TP_REF_INFO_UTC_STANDARD_SU         (6<<4)
+#define UBX_TIM_TP_REF_INFO_UTC_STANDARD_UNKNOWN    (15<<4)
 
 static uint16_t ublox_fletcher_8(uint16_t chk, uint8_t *buf, uint8_t n);
 static void ublox_checksum(uint8_t *buf);
@@ -454,6 +508,7 @@ static void ublox_state_machine(uint8_t b)
 
     ubx_cfg_nav5_t cfg_nav5;
     ubx_nav_pvt_t nav_pvt;
+    ubx_nav_timels_t nav_timels;
     ubx_tim_tp_t tim_tp;
 
     switch(state) {
@@ -533,6 +588,9 @@ static void ublox_state_machine(uint8_t b)
                     if(id == UBX_NAV_PVT) {
                         memcpy(nav_pvt.payload, payload, length);
                         /* TODO: handle receiving a PVT */
+                    } else if(id == UBX_NAV_TIMELS) {
+                        memcpy(nav_timels.payload, payload, length);
+                        /* TODO: handle receiving a TIMELS */
                     } else {
                         ublox_error("unknown nav msg");
                     }
@@ -541,15 +599,16 @@ static void ublox_state_machine(uint8_t b)
                     if(id == UBX_TIM_TP) {
                         memcpy(tim_tp.payload, payload, length);
                         if(tim_tp.flags & UBX_TIM_TP_FLAGS_TIMEBASE_UTC &&
-                           tim_tp.flags & UBX_TIM_TP_FLAGS_UTC_AVAILABLE)
+                           tim_tp.flags & UBX_TIM_TP_FLAGS_UTC_AVAILABLE &&
+                           tim_tp.ref_info & UBX_TIM_TP_REF_INFO_UTC_STANDARD_USNO)
                         {
-                            ublox_tp_time.valid = true;
-                            ublox_tp_time.tow_ms = tim_tp.tow_ms;
-                            ublox_tp_time.tow_sub_ms = tim_tp.tow_sub_ms;
-                            ublox_tp_time.week = tim_tp.week;
-                            /* TODO: add synchronisation (events?) */
+                            ublox_upcoming_tp_time.week = tim_tp.week;
+                            ublox_upcoming_tp_time.tow_sub_ms =
+                                ((uint64_t)tim_tp.tow_ms << 32)
+                                | tim_tp.tow_sub_ms;
+                            ublox_upcoming_tp_time.valid = true;
                         } else {
-                            ublox_tp_time.valid = false;
+                            ublox_upcoming_tp_time.valid = false;
                         }
                     } else {
                         ublox_error("unknown tim msg");
@@ -723,26 +782,22 @@ static bool ublox_configure_tp5(void)
     tp5.id = UBX_CFG_TP5;
     tp5.length = sizeof(tp5.payload);
 
-    /* Enable 1MHz output on TIMEPULSE,
-     * only when GNSS lock is valid.
+    /* Enable 1MHz output on TIMEPULSE, always output.
      */
-    tp5.tp_idx = 0;
-    tp5.version = 1;
-    tp5.ant_cable_delay = 15;
-    tp5.freq_period = 0;
-    tp5.pulse_len_ratio = 1000;
-    tp5.freq_period_lock = 1000000;
+    tp5.tp_idx               = 0;
+    tp5.version              = 1;
+    tp5.ant_cable_delay      = 15;
+    tp5.freq_period          = 1000000;
+    tp5.pulse_len_ratio      = 1000;
+    tp5.freq_period_lock     = 1000000;
     tp5.pulse_len_ratio_lock = 1000;
     tp5.flags = (
-        UBX_CFG_TP5_FLAGS_ACTIVE(true)              |
-        UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ(true)      |
-        UBX_CFG_TP5_FLAGS_LOCKED_OTHER_SET(true)    |
-        UBX_CFG_TP5_FLAGS_IS_FREQ(true)             |
-        UBX_CFG_TP5_FLAGS_IS_LENGTH(true)           |
-        UBX_CFG_TP5_FLAGS_ALIGN_TO_TOW(false)       |
-        UBX_CFG_TP5_FLAGS_POLARITY(0)               |
-        UBX_CFG_TP5_FLAGS_GRID_UTC_GPS(0)           |
-        UBX_CFG_TP5_FLAGS_SYNC_MODE(0));
+        UBX_CFG_TP5_FLAGS_ACTIVE                    |
+        UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ            |
+        UBX_CFG_TP5_FLAGS_IS_FREQ                   |
+        UBX_CFG_TP5_FLAGS_IS_LENGTH                 |
+        UBX_CFG_TP5_FLAGS_POLARITY                  |
+        UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_UTC);
 
     if(!ublox_transmit((uint8_t*)&tp5)) {
         return false;
@@ -753,23 +808,22 @@ static bool ublox_configure_tp5(void)
      * rising edge at top of second,
      * aligned to top of second.
      */
-    tp5.tp_idx = 0;
-    tp5.version = 1;
-    tp5.ant_cable_delay = 15;
-    tp5.freq_period = 0;
-    tp5.pulse_len_ratio = 1000;
-    tp5.freq_period_lock = 1;
+    tp5.tp_idx               = 0;
+    tp5.version              = 1;
+    tp5.ant_cable_delay      = 15;
+    tp5.freq_period          = 0;
+    tp5.pulse_len_ratio      = 1000;
+    tp5.freq_period_lock     = 1;
     tp5.pulse_len_ratio_lock = 1000;
     tp5.flags = (
-        UBX_CFG_TP5_FLAGS_ACTIVE(true)              |
-        UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ(true)      |
-        UBX_CFG_TP5_FLAGS_LOCKED_OTHER_SET(true)    |
-        UBX_CFG_TP5_FLAGS_IS_FREQ(true)             |
-        UBX_CFG_TP5_FLAGS_IS_LENGTH(true)           |
-        UBX_CFG_TP5_FLAGS_ALIGN_TO_TOW(true)        |
-        UBX_CFG_TP5_FLAGS_POLARITY(1)               |
-        UBX_CFG_TP5_FLAGS_GRID_UTC_GPS(0)           |
-        UBX_CFG_TP5_FLAGS_SYNC_MODE(0));
+        UBX_CFG_TP5_FLAGS_ACTIVE                    |
+        UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ            |
+        UBX_CFG_TP5_FLAGS_LOCKED_OTHER_SET          |
+        UBX_CFG_TP5_FLAGS_IS_FREQ                   |
+        UBX_CFG_TP5_FLAGS_IS_LENGTH                 |
+        UBX_CFG_TP5_FLAGS_ALIGN_TO_TOW              |
+        UBX_CFG_TP5_FLAGS_POLARITY                  |
+        UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_UTC);
 
     return ublox_transmit((uint8_t*)&tp5);
 }
@@ -787,6 +841,15 @@ static bool ublox_configure_msg(void)
     /* Set NAV_PVT to 1 per second */
     msg.msg_class = UBX_NAV;
     msg.msg_id    = UBX_NAV_PVT;
+    msg.rate      = 1;
+
+    if(!ublox_transmit((uint8_t*)&msg)) {
+        return false;
+    }
+
+    /* Set NAV TIMELS to 1 per second */
+    msg.msg_class = UBX_NAV;
+    msg.msg_id    = UBX_NAV_TIMELS;
     msg.rate      = 1;
 
     if(!ublox_transmit((uint8_t*)&msg)) {
@@ -827,7 +890,7 @@ void ublox_init(SerialDriver* seriald) {
     ublox_seriald = seriald;
 
     /* Ensure the time is not yet valid */
-    ublox_tp_time.valid = false;
+    ublox_upcoming_tp_time.valid = false;
 
     /* Start up the ublox processing thread */
     chThdCreateStatic(ublox_thd_wa, sizeof(ublox_thd_wa), NORMALPRIO,
