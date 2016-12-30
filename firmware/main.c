@@ -13,7 +13,7 @@ int main(void)
 
     ublox_init(&SD2);
     cs2100_configure(&I2CD3);
-    /*cs2100_set_pll();*/
+    cs2100_set_pll();
 
     microsd_init();
 

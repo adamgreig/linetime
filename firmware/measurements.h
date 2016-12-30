@@ -14,7 +14,7 @@ struct mains_cycle {
 
     /* Computed frequency (Hz) and RMS voltage. */
     double frequency, rms;
-};
+} __attribute__((packed));
 
 struct mains_waveform {
     /* UTC time of first waveform sample.
@@ -25,6 +25,6 @@ struct mains_waveform {
 
     /* Waveform sampled at 5ks/s. */
     int16_t waveform[256];
-};
+} __attribute__((packed));
 
 #endif

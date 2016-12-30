@@ -247,6 +247,9 @@ static void measurements_handle_zc()
     uint64_t delta_sub_ms  = (delta_ticks<<32) / (TIMER_FREQ / 1000);
     uint64_t zc_utc_tow_sub_ms = prev_pps.utc_tow_sub_ms + delta_sub_ms;
 
+    mains_cycle_out.utc_week = prev_mains_cycle.zc_utc_week;
+    mains_cycle_out.utc_tow_sub_ms = prev_mains_cycle.zc_utc_tow_sub_ms;
+
     /* Compute the frequency of the previous waveform. */
     /* TODO: Consider checking for timer overflow beyond two 22s periods,
      * possibly by computing period just based on the UTC timestamps.
@@ -258,6 +261,8 @@ static void measurements_handle_zc()
     /* TODO: This wraps around much sooner than the timer will, in the event
      * of low-frequency cycles. Detect and handle gracefully.
      */
+/* TODO this crashes, waveform_len ends up ginormous, fix me */
+#if 0
     size_t i;
     int64_t sum_squares = 0;
     size_t waveform_len = adc_ts - prev_mains_cycle.adc_timestamp;
@@ -279,6 +284,8 @@ static void measurements_handle_zc()
         }
     }
     mains_cycle_out.rms = sqrt((double)sum_squares / (double)waveform_len);
+#endif
+    mains_cycle_out.rms = 0;
 
     cycle_queue_submit(&mains_cycle_out);
 
