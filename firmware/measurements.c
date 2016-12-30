@@ -142,8 +142,9 @@ static void measurements_timers_init()
         .dier = 0,
     };
     gptStart(&GPTD3, &gpt3_cfg);
-    GPTD3.tim->CCR[3] = 18;
+    GPTD3.tim->CCR[3] = 1;
     GPTD3.tim->CCER = STM32_TIM_CCER_CC4E;
+    GPTD3.tim->CCMR2 = STM32_TIM_CCMR2_OC4M(6);
     gptStartContinuous(&GPTD3, 19);
 
 }
@@ -151,11 +152,6 @@ static void measurements_timers_init()
 static void measurements_adcs_init()
 {
     /* ADC1: Sample mains waveform continuously, clocked by TIM3 CC4. */
-    /* TODO: enable half-full and full callbacks,
-     *       and in them get a UTC timestamp and
-     *       subsample the buffer 1/10, sticking
-     *       results somewhere to be uploaded.
-     */
     static const ADCConversionGroup adc1_grp = {
         .circular = true,
         .num_channels = 1,
@@ -250,7 +246,7 @@ static void measurements_handle_zc()
     uint64_t zc_utc_tow_sub_ms = prev_pps.utc_tow_sub_ms + delta_sub_ms;
 
     /* Compute the frequency of the previous waveform. */
-    /* TODO: Consider checking for timer overflow beyond 22s period,
+    /* TODO: Consider checking for timer overflow beyond two 22s periods,
      * possibly by computing period just based on the UTC timestamps.
      */
     double period = zc_ts - prev_mains_cycle.zc_timestamp;
@@ -321,7 +317,6 @@ static void measurements_handle_pps()
         prev_pps.utc_tow_sub_ms = 0;
         prev_pps.utc_week = 0;
     }
-    palSetLine(LINE_LED_YLW);
 }
 
 /* Handle TIM2 input capture events */
@@ -329,21 +324,28 @@ static void measurements_gpt2_cb(GPTDriver* gptd)
 {
     (void)gptd;
 
+    /* Amazingly, ChibiOS sets SR to 0, so there's no way to tell which
+     * channel caused this interrupt to fire. So we'll do this stupid thing.
+     */
+    static uint32_t prev_ccr1 = 0, prev_ccr2 = 0;
+
     /* Handle PPS */
-    if(GPTD2.tim->SR & STM32_TIM_SR_CC2IF) {
+    if(GPTD2.tim->CCR[1] != prev_ccr2) {
+        prev_ccr2 = GPTD2.tim->CCR[1];
         measurements_handle_pps();
         GPTD2.tim->SR &= ~STM32_TIM_SR_CC2IF;
     }
 
     /* Handle mains zero crossing */
-    if(GPTD2.tim->SR & STM32_TIM_SR_CC1IF) {
+    if(GPTD2.tim->CCR[0] != prev_ccr1) {
+        prev_ccr1 = GPTD2.tim->CCR[0];
         measurements_handle_zc();
         GPTD2.tim->SR &= ~STM32_TIM_SR_CC1IF;
     }
 
 }
 
-static THD_WORKING_AREA(mains_bias_thd_wa, 1024);
+static THD_WORKING_AREA(mains_bias_thd_wa, 128);
 static THD_FUNCTION(mains_bias_thd, arg) {
     (void)arg;
     while(true) {

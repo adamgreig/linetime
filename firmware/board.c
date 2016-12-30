@@ -97,7 +97,6 @@ void __early_init(void) {
 bool sdc_lld_is_card_inserted(SDCDriver *sdcp) {
 
   (void)sdcp;
-  /* TODO: Fill the implementation.*/
   return true;
 }
 
@@ -107,7 +106,6 @@ bool sdc_lld_is_card_inserted(SDCDriver *sdcp) {
 bool sdc_lld_is_write_protected(SDCDriver *sdcp) {
 
   (void)sdcp;
-  /* TODO: Fill the implementation.*/
   return false;
 }
 #endif /* HAL_USE_SDC */
@@ -119,7 +117,6 @@ bool sdc_lld_is_write_protected(SDCDriver *sdcp) {
 bool mmc_lld_is_card_inserted(MMCDriver *mmcp) {
 
   (void)mmcp;
-  /* TODO: Fill the implementation.*/
   return true;
 }
 
@@ -129,7 +126,6 @@ bool mmc_lld_is_card_inserted(MMCDriver *mmcp) {
 bool mmc_lld_is_write_protected(MMCDriver *mmcp) {
 
   (void)mmcp;
-  /* TODO: Fill the implementation.*/
   return false;
 }
 #endif

@@ -605,12 +605,10 @@ static enum ublox_result ublox_state_machine()
                 case UBX_NAV:
                     if(id == UBX_NAV_PVT) {
                         memcpy(nav_pvt.payload, payload, length);
-                        /* TODO: handle receiving a PVT */
                         microsd_log(TAG_GPS_PVT, length, payload);
                         return UBLOX_NAV_PVT;
                     } else if(id == UBX_NAV_TIMELS) {
                         memcpy(nav_timels.payload, payload, length);
-                        /* TODO: handle receiving a TIMELS */
                         return UBLOX_NAV_TIMELS;
                     } else {
                         ublox_error("unknown nav msg");

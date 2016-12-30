@@ -88,7 +88,7 @@ FRESULT microsd_write(FIL* fp, const void* buf, size_t len)
     return err == FR_OK;
 }
 
-static THD_WORKING_AREA(microsd_thd_wa, 2048);
+static THD_WORKING_AREA(microsd_thd_wa, 4096);
 static THD_FUNCTION(microsd_thd, arg)
 {
     (void)arg;
@@ -100,8 +100,10 @@ static THD_FUNCTION(microsd_thd, arg)
     uint8_t* card_buf_p = microsd_card_buf;
     size_t entry_len;
 
+    palSetLine(LINE_LED_YLW);
     microsd_card_try_init(&file_system);
     while(microsd_open_file_inc(&file) != FR_OK);
+    palClearLine(LINE_LED_YLW);
 
     while(true) {
         /* Block getting a new pointer from mailbox */
@@ -122,8 +124,9 @@ static THD_FUNCTION(microsd_thd, arg)
         size_t buf_used = (size_t)(card_buf_p - microsd_card_buf);
         size_t buf_space = sizeof(microsd_card_buf) - buf_used;
         if(buf_space < entry_len) {
-            FRESULT err;
-            err = microsd_write(&file, mailbox_p, entry_len);
+            palSetLine(LINE_LED_YLW);
+
+            FRESULT err = microsd_write(&file, mailbox_p, entry_len);
 
             /* If writing failed, reopen the card and keep retrying */
             while(err != FR_OK) {
@@ -136,6 +139,7 @@ static THD_FUNCTION(microsd_thd, arg)
             }
 
             card_buf_p = microsd_card_buf;
+            palClearLine(LINE_LED_YLW);
         }
 
         /* Copy entry into write buffer */
@@ -149,8 +153,10 @@ static THD_FUNCTION(microsd_thd, arg)
 
 void microsd_init()
 {
-    chHeapObjectInit(&microsd_heap, microsd_heap_buf, sizeof(microsd_heap_buf));
-    chMBObjectInit(&microsd_mailbox, microsd_mailbox_buf, sizeof(microsd_mailbox_buf)/sizeof(msg_t));
+    chHeapObjectInit(&microsd_heap, microsd_heap_buf,
+                     sizeof(microsd_heap_buf));
+    chMBObjectInit(&microsd_mailbox, microsd_mailbox_buf,
+                   sizeof(microsd_mailbox_buf)/sizeof(msg_t));
     memset(microsd_card_buf, 0, sizeof(microsd_card_buf));
 
     chThdCreateStatic(microsd_thd_wa, sizeof(microsd_thd_wa),
