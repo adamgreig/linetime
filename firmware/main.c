@@ -14,7 +14,14 @@ int main(void)
     cs2100_configure(&I2CD3);
     cs2100_set_pll();
 
-    measurements_init();
+    /*measurements_init();*/
+
+    while(true) {
+        palSetLine(LINE_LED_GRN);
+        chThdSleepMilliseconds(500);
+        palClearLine(LINE_LED_GRN);
+        chThdSleepMilliseconds(500);
+    }
 
     while(true) {
         chThdSleep(TIME_INFINITE);

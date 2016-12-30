@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O0 -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
@@ -220,3 +220,34 @@ ULIBS = -lm
 
 RULESPATH = $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
+
+
+##############################################################################
+# BMP flashing via GDB
+#
+BMP_PORT = $(wildcard /dev/serial/by-id/*Black_Magic_Probe*if00)
+flash: build/$(PROJECT).elf $(OUTFILES)
+	arm-none-eabi-gdb --batch \
+		              -ex 'target extended-remote $(BMP_PORT)' \
+					  -ex 'monitor version' \
+					  -ex 'monitor swdp_scan' \
+					  -ex "attach 1" \
+					  -ex 'load build/$(PROJECT).elf'
+
+debug: build/$(PROJECT).elf $(OUTFILES)
+	arm-none-eabi-gdb -ex 'target extended-remote $(BMP_PORT)' \
+		              -ex 'monitor swdp_scan' \
+					  -ex "attach 1" \
+					  -ex "file build/$(PROJECT).elf"
+
+power:
+	arm-none-eabi-gdb --batch \
+	                  -ex 'target extended-remote $(BMP_PORT)' \
+		              -ex 'monitor tpwr enable'
+unpower:
+	arm-none-eabi-gdb --batch \
+		              -ex 'target extended-remote $(BMP_PORT)' \
+		              -ex 'monitor tpwr disable'
+#
+# End BMP flashing
+##############################################################################

@@ -83,6 +83,8 @@ static bool cs2100_read(uint8_t reg_addr, uint8_t* data)
     if(result == MSG_OK) {
         return true;
     } else if(result == MSG_RESET) {
+        i2cflags_t i2c_errs = i2cGetErrors(cs2100_i2cd);
+        (void)i2c_errs;
         cs2100_error("I2C write error");
         return false;
     } else if(result == MSG_TIMEOUT) {
@@ -102,6 +104,8 @@ static bool cs2100_write(uint8_t reg_addr, uint8_t data)
     if(result == MSG_OK) {
         return true;
     } else if(result == MSG_RESET) {
+        i2cflags_t i2c_errs = i2cGetErrors(cs2100_i2cd);
+        (void)i2c_errs;
         cs2100_error("I2C write error");
         return false;
     } else if(result == MSG_TIMEOUT) {

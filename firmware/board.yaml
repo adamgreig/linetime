@@ -19,6 +19,7 @@ pins:
   RMII_TX_EN: pg11, af11
   RMII_TXD0: pg13, af11
   RMII_TXD1: pg14, af11
+  PHY_RST: pb15, output, floating, startlow
 
   # LCD on TFT-LCD controller and on SPI4, backlight PWM on TIM4 ch1
   LCD_VSYNC: pa4, af14
@@ -60,7 +61,7 @@ pins:
 
   # Sounder
   SOUNDER: pa5, analog
-  SOUNDER_SD: pb2, output
+  SOUNDER_SD: pb2, output, startlow
 
   # Battery management on ADC3
   BATT_I_CHG: pf3, floating, analog

@@ -177,12 +177,14 @@ static void measurements_adcs_init()
 
 static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
 {
+    (void)adcp;
+
     /* TODO get a mains_waveform struct from a queue or whatever */
     struct mains_waveform waveform;
 
     /* Get current timestamp and most recent PPS timestamp */
-    uint64_t delta_ticks    = (GPTD2->CNT) - prev_pps.timestamp;
-    uint64_t delta_sub_ms   = (delta_ticks<<32) / (TIME_FREQ / 1000);
+    uint64_t delta_ticks    = (GPTD2.tim->CNT) - prev_pps.timestamp;
+    uint64_t delta_sub_ms   = (delta_ticks<<32) / (TIMER_FREQ / 1000);
     uint64_t utc_tow_sub_ms = prev_pps.utc_tow_sub_ms + delta_sub_ms;
     uint16_t utc_week       = prev_pps.utc_week;
 
@@ -204,6 +206,8 @@ static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
     }
 
     /* TODO submit the struct mains_waveform to a queue. */
+    (void)utc_tow_sub_ms;
+    (void)utc_week;
 }
 
 static void measurements_handle_zc()

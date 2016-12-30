@@ -30,12 +30,6 @@
 #define BOARD_NAME                     "Linetime"
 
 /*
-    Ethernet/PHY
-*/
-#define BOARD_PHY_ID                   0x00221560
-#define BOARD_PHY_RMII
-
-/*
     Board oscillators-related settings.
 */
 #if !defined(STM32_LSECLK)
@@ -53,6 +47,21 @@
     Required for performance limits calculation.
 */
 #define STM32_VDD                      330U
+
+/*
+    Ethernet/PHY
+*/
+#define BOARD_PHY_ID                   0x00221560
+#define BOARD_PHY_ADDRESS              0x00
+#define BOARD_PHY_RMII
+#define BOARD_PHY_RESET() {                                                   \
+    palSetLine(LINE_LED_YLW);                                                 \
+    palClearLine(LINE_PHY_RST);                                               \
+    for(volatile uint32_t i=0; i<1920000; i++) asm("nop");                    \
+    palSetLine(LINE_PHY_RST);                                                 \
+    palClearLine(LINE_LED_YLW);                                               \
+}
+
 
 /*
     MCU type as defined in the ST header.
@@ -95,7 +104,7 @@
 #define GPIOB_BATT_CHG                 12U
 #define GPIOB_BATT_PGOOD               13U
 #define GPIOB_BATT_CE                  14U
-#define GPIOB_PIN15                    15U
+#define GPIOB_PHY_RST                  15U
 
 #define GPIOC_PIN0                     0U
 #define GPIOC_RMII_MDC                 1U
@@ -301,6 +310,7 @@
 #define LINE_MAINS_BIAS                PAL_LINE(GPIOC, 3U)
 #define LINE_MAINS_WAVE                PAL_LINE(GPIOC, 2U)
 #define LINE_MAINS_ZC                  PAL_LINE(GPIOA, 15U)
+#define LINE_PHY_RST                   PAL_LINE(GPIOB, 15U)
 #define LINE_RMII_CRS_DV               PAL_LINE(GPIOA, 7U)
 #define LINE_RMII_MDC                  PAL_LINE(GPIOC, 1U)
 #define LINE_RMII_MDIO                 PAL_LINE(GPIOA, 2U)
@@ -389,7 +399,7 @@
                                         PIN_OTYPE_PUSHPULL(GPIOA_SOUNDER) | \
                                         PIN_OTYPE_PUSHPULL(GPIOA_LCD_G2) | \
                                         PIN_OTYPE_PUSHPULL(GPIOA_RMII_CRS_DV) | \
-                                        PIN_OTYPE_PUSHPULL(GPIOA_CS2100_SCL) | \
+                                        PIN_OTYPE_OPENDRAIN(GPIOA_CS2100_SCL) | \
                                         PIN_OTYPE_PUSHPULL(GPIOA_PIN9) | \
                                         PIN_OTYPE_PUSHPULL(GPIOA_PIN10) | \
                                         PIN_OTYPE_PUSHPULL(GPIOA_LCD_R4) | \
@@ -467,7 +477,7 @@
  *
  * PB0  - LCD_R3                       (af9).
  * PB1  - LCD_R6                       (af9).
- * PB2  - SOUNDER_SD                   (output).
+ * PB2  - SOUNDER_SD                   (output, startlow).
  * PB3  - GPS_PPS                      (floating, af1).
  * PB4  - PIN4                         (unused).
  * PB5  - LED_RED                      (output, startlow).
@@ -480,7 +490,7 @@
  * PB12 - BATT_CHG                     ().
  * PB13 - BATT_PGOOD                   ().
  * PB14 - BATT_CE                      (output).
- * PB15 - PIN15                        (unused).
+ * PB15 - PHY_RST                      (output, floating, startlow).
 */
 #define VAL_GPIOB_MODER                (PIN_MODE_ALTERNATE(GPIOB_LCD_R3) | \
                                         PIN_MODE_ALTERNATE(GPIOB_LCD_R6) | \
@@ -497,7 +507,7 @@
                                         PIN_MODE_INPUT(GPIOB_BATT_CHG) | \
                                         PIN_MODE_INPUT(GPIOB_BATT_PGOOD) | \
                                         PIN_MODE_OUTPUT(GPIOB_BATT_CE) | \
-                                        PIN_MODE_INPUT(GPIOB_PIN15))
+                                        PIN_MODE_OUTPUT(GPIOB_PHY_RST))
 #define VAL_GPIOB_OTYPER               (PIN_OTYPE_PUSHPULL(GPIOB_LCD_R3) | \
                                         PIN_OTYPE_PUSHPULL(GPIOB_LCD_R6) | \
                                         PIN_OTYPE_PUSHPULL(GPIOB_SOUNDER_SD) | \
@@ -513,7 +523,7 @@
                                         PIN_OTYPE_PUSHPULL(GPIOB_BATT_CHG) | \
                                         PIN_OTYPE_PUSHPULL(GPIOB_BATT_PGOOD) | \
                                         PIN_OTYPE_PUSHPULL(GPIOB_BATT_CE) | \
-                                        PIN_OTYPE_PUSHPULL(GPIOB_PIN15))
+                                        PIN_OTYPE_PUSHPULL(GPIOB_PHY_RST))
 #define VAL_GPIOB_OSPEEDR              (PIN_OSPEED_HIGH(GPIOB_LCD_R3) | \
                                         PIN_OSPEED_HIGH(GPIOB_LCD_R6) | \
                                         PIN_OSPEED_HIGH(GPIOB_SOUNDER_SD) | \
@@ -529,7 +539,7 @@
                                         PIN_OSPEED_HIGH(GPIOB_BATT_CHG) | \
                                         PIN_OSPEED_HIGH(GPIOB_BATT_PGOOD) | \
                                         PIN_OSPEED_HIGH(GPIOB_BATT_CE) | \
-                                        PIN_OSPEED_HIGH(GPIOB_PIN15))
+                                        PIN_OSPEED_HIGH(GPIOB_PHY_RST))
 #define VAL_GPIOB_PUPDR                (PIN_PUPD_PULLUP(GPIOB_LCD_R3) | \
                                         PIN_PUPD_PULLUP(GPIOB_LCD_R6) | \
                                         PIN_PUPD_PULLUP(GPIOB_SOUNDER_SD) | \
@@ -545,10 +555,10 @@
                                         PIN_PUPD_PULLUP(GPIOB_BATT_CHG) | \
                                         PIN_PUPD_PULLUP(GPIOB_BATT_PGOOD) | \
                                         PIN_PUPD_PULLUP(GPIOB_BATT_CE) | \
-                                        PIN_PUPD_PULLUP(GPIOB_PIN15))
+                                        PIN_PUPD_FLOATING(GPIOB_PHY_RST))
 #define VAL_GPIOB_ODR                  (PIN_OD_HIGH(GPIOB_LCD_R3) | \
                                         PIN_OD_HIGH(GPIOB_LCD_R6) | \
-                                        PIN_OD_HIGH(GPIOB_SOUNDER_SD) | \
+                                        PIN_OD_LOW(GPIOB_SOUNDER_SD) | \
                                         PIN_OD_HIGH(GPIOB_GPS_PPS) | \
                                         PIN_OD_HIGH(GPIOB_PIN4) | \
                                         PIN_OD_LOW(GPIOB_LED_RED) | \
@@ -561,7 +571,7 @@
                                         PIN_OD_HIGH(GPIOB_BATT_CHG) | \
                                         PIN_OD_HIGH(GPIOB_BATT_PGOOD) | \
                                         PIN_OD_HIGH(GPIOB_BATT_CE) | \
-                                        PIN_OD_HIGH(GPIOB_PIN15))
+                                        PIN_OD_LOW(GPIOB_PHY_RST))
 #define VAL_GPIOB_AFRL                 (PIN_AFIO_AF(GPIOB_LCD_R3, 9U) | \
                                         PIN_AFIO_AF(GPIOB_LCD_R6, 9U) | \
                                         PIN_AFIO_AF(GPIOB_SOUNDER_SD, 0U) | \
@@ -577,7 +587,7 @@
                                         PIN_AFIO_AF(GPIOB_BATT_CHG, 0U) | \
                                         PIN_AFIO_AF(GPIOB_BATT_PGOOD, 0U) | \
                                         PIN_AFIO_AF(GPIOB_BATT_CE, 0U) | \
-                                        PIN_AFIO_AF(GPIOB_PIN15, 0U))
+                                        PIN_AFIO_AF(GPIOB_PHY_RST, 0U))
 
 /*
  *  GPIOC setup:
@@ -624,7 +634,7 @@
                                         PIN_OTYPE_PUSHPULL(GPIOC_LCD_HSYNC) | \
                                         PIN_OTYPE_PUSHPULL(GPIOC_LCD_G6) | \
                                         PIN_OTYPE_PUSHPULL(GPIOC_USD_DAT0) | \
-                                        PIN_OTYPE_PUSHPULL(GPIOC_CS2100_SDA) | \
+                                        PIN_OTYPE_OPENDRAIN(GPIOC_CS2100_SDA) | \
                                         PIN_OTYPE_PUSHPULL(GPIOC_LCD_R2) | \
                                         PIN_OTYPE_PUSHPULL(GPIOC_PIN11) | \
                                         PIN_OTYPE_PUSHPULL(GPIOC_USD_CLK) | \

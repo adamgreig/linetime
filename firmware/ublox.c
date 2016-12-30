@@ -29,6 +29,8 @@
 #define NMEA_CLASS 0xF0
 
 /* Selection of UBX IDs */
+#define UBX_ACK_NAK     0x00
+#define UBX_ACK_ACK     0x01
 #define UBX_CFG_PRT     0x00
 #define UBX_CFG_MSG     0x01
 #define UBX_CFG_TP5     0x31
@@ -101,7 +103,7 @@ typedef struct __attribute__((packed)) {
     uint8_t sync1, sync2, class, id;
     uint16_t length;
     union {
-        uint8_t payload[52];
+        uint8_t payload[44];
         struct {
             uint8_t msg_ver;
             uint8_t num_trk_ch_hw;
@@ -117,11 +119,6 @@ typedef struct __attribute__((packed)) {
             uint8_t sbas_max_trk_ch;
             uint8_t sbas_reserved1;
             uint32_t sbas_flags;
-            uint8_t galileo_gnss_id;
-            uint8_t galileo_res_trk_ch;
-            uint8_t galileo_max_trk_ch;
-            uint8_t galileo_reserved1;
-            uint32_t galileo_flags;
             uint8_t beidou_gnss_id;
             uint8_t beidou_res_trk_ch;
             uint8_t beidou_max_trk_ch;
@@ -144,7 +141,6 @@ typedef struct __attribute__((packed)) {
 #define UBX_CFG_GNSS_FLAGS_ENABLE(x) (x&1)
 #define UBX_CFG_GNSS_GNSS_ID_GPS     (0)
 #define UBX_CFG_GNSS_GNSS_ID_SBAS    (1)
-#define UBX_CFG_GNSS_GNSS_ID_GALILEO (2)
 #define UBX_CFG_GNSS_GNSS_ID_BEIDOU  (3)
 #define UBX_CFG_GNSS_GNSS_ID_QZSS    (5)
 #define UBX_CFG_GNSS_GNSS_ID_GLONASS (6)
@@ -400,10 +396,24 @@ typedef struct __attribute__((packed)) {
 #define UBX_TIM_TP_REF_INFO_UTC_STANDARD_SU         (6<<4)
 #define UBX_TIM_TP_REF_INFO_UTC_STANDARD_UNKNOWN    (15<<4)
 
+enum ublox_result {
+    UBLOX_WAIT,
+    UBLOX_RXLEN_TOO_LONG,
+    UBLOX_BAD_CHECKSUM,
+    UBLOX_ACK, UBLOX_NAK,
+    UBLOX_NAV_PVT, UBLOX_NAV_TIMELS,
+    UBLOX_TIM_TP,
+    UBLOX_CFG_NAV5,
+    UBLOX_UNHANDLED,
+    UBLOX_ERROR
+};
+
 static uint16_t ublox_fletcher_8(uint16_t chk, uint8_t *buf, uint8_t n);
 static void ublox_checksum(uint8_t *buf);
 static bool ublox_transmit(uint8_t *buf);
-static void ublox_state_machine(uint8_t c);
+static enum ublox_result ublox_state_machine(void);
+static bool ublox_expect(enum ublox_result expected, const char* errmsg);
+static bool ublox_tx_expect(uint8_t* buf, enum ublox_result exp, const char* err);
 static bool ublox_configure(void);
 static bool ublox_configure_prt(void);
 static bool ublox_configure_nav5(void);
@@ -492,10 +502,11 @@ static bool ublox_transmit(uint8_t *buf)
  * function preserves static state and processes new messages as appropriate
  * once received.
  */
-uint8_t rxbuf[255] = {0};
+uint8_t rxbuf[256] = {0};
 uint8_t rxbufidx = 0;
-static void ublox_state_machine(uint8_t b)
+static enum ublox_result ublox_state_machine()
 {
+    uint8_t b = sdGet(ublox_seriald);
     rxbuf[rxbufidx++] = b;
     static ubx_state state = STATE_IDLE;
 
@@ -542,8 +553,10 @@ static void ublox_state_machine(uint8_t b)
         case STATE_L1:
             length |= (uint16_t)b << 8;
             if(length >= 128) {
-                ublox_error("rx length field >= 128");
                 state = STATE_IDLE;
+                rxbufidx = 0;
+                ublox_error("rx length field >= 128");
+                return UBLOX_RXLEN_TOO_LONG;
             }
             length_remaining = length;
             state = STATE_PAYLOAD;
@@ -569,30 +582,37 @@ static void ublox_state_machine(uint8_t b)
             ck = ublox_fletcher_8(ck, payload, length);
             if(ck_a != (ck&0xFF) || ck_b != (ck>>8)) {
                 ublox_error("rx checksum invalid");
-                break;
+                state = STATE_IDLE;
+                rxbufidx = 0;
+                return UBLOX_BAD_CHECKSUM;
             }
+
+            state = STATE_IDLE;
+            rxbufidx = 0;
 
             switch(class) {
                 case UBX_ACK:
-                    if(id == 0x00) {
-                        /* NAK */
-                        ublox_error("nak received");
-                    } else if(id == 0x01) {
-                        /* ACK */
-                        /* No need to do anything */
+                    if(id == UBX_ACK_ACK) {
+                        return UBLOX_ACK;
+                    } else if(id == UBX_ACK_NAK) {
+                        return UBLOX_NAK;
                     } else {
                         ublox_error("unknown ack msg");
+                        return UBLOX_UNHANDLED;
                     }
                     break;
                 case UBX_NAV:
                     if(id == UBX_NAV_PVT) {
                         memcpy(nav_pvt.payload, payload, length);
                         /* TODO: handle receiving a PVT */
+                        return UBLOX_NAV_PVT;
                     } else if(id == UBX_NAV_TIMELS) {
                         memcpy(nav_timels.payload, payload, length);
                         /* TODO: handle receiving a TIMELS */
+                        return UBLOX_NAV_TIMELS;
                     } else {
                         ublox_error("unknown nav msg");
+                        return UBLOX_UNHANDLED;
                     }
                     break;
                 case UBX_TIM:
@@ -610,8 +630,10 @@ static void ublox_state_machine(uint8_t b)
                         } else {
                             ublox_upcoming_tp_time.valid = false;
                         }
+                        return UBLOX_TIM_TP;
                     } else {
                         ublox_error("unknown tim msg");
+                        return UBLOX_UNHANDLED;
                     }
                     break;
                 case UBX_CFG:
@@ -627,8 +649,10 @@ static void ublox_state_machine(uint8_t b)
                         {
                             ublox_error("received cfg_nav5 not USNO");
                         }
+                        return UBLOX_CFG_NAV5;
                     } else {
                         ublox_error("unknown cfg msg");
+                        return UBLOX_UNHANDLED;
                     }
                     break;
                 default:
@@ -638,22 +662,74 @@ static void ublox_state_machine(uint8_t b)
 
         default:
             state = STATE_IDLE;
+            rxbufidx = 0;
             ublox_error("state machine default");
-            break;
+            return UBLOX_ERROR;
 
     }
+
+    return UBLOX_WAIT;
+}
+
+static bool ublox_expect(enum ublox_result expected, const char* errmsg)
+{
+    enum ublox_result r;
+    do {
+        r = ublox_state_machine();
+    } while(r == UBLOX_WAIT);
+
+    if(r != expected) {
+        ublox_error(errmsg);
+        return false;
+    }
+
+    return true;
+}
+
+static bool ublox_tx_expect(uint8_t* buf, enum ublox_result exp, const char* err)
+{
+    if(!ublox_transmit(buf)) {
+        return false;
+    }
+
+    if(!ublox_expect(exp, err)) {
+        return false;
+    }
+
+    return true;
 }
 
 static bool ublox_configure(void)
 {
-    return (
-        ublox_configure_prt() &&
-        ublox_configure_nav5() &&
-        ublox_configure_rate() &&
-        ublox_configure_gnss() &&
-        ublox_configure_sbas() &&
-        ublox_configure_tp5() &&
-        ublox_configure_msg());
+    if(!ublox_configure_prt()) {
+        return false;
+    }
+
+    if(!ublox_configure_nav5()) {
+        return false;
+    }
+
+    if(!ublox_configure_rate()) {
+        return false;
+    }
+
+    if(!ublox_configure_gnss()) {
+        return false;
+    }
+
+    if(!ublox_configure_sbas()) {
+        return false;
+    }
+
+    if(!ublox_configure_tp5()) {
+        return false;
+    }
+
+    if(!ublox_configure_msg()) {
+        return false;
+    }
+
+    return true;
 }
 
 static bool ublox_configure_prt(void)
@@ -682,7 +758,19 @@ static bool ublox_configure_prt(void)
     /* no weird timeout */
     prt.flags = 0;
 
-    return ublox_transmit((uint8_t*)&prt);
+    /* Don't wait for an ACK for this as there'll be loads of shit
+     * from NMEA mode wasting the buffer */
+    if(!ublox_transmit((uint8_t*)&prt)) {
+        return false;
+    }
+
+    /* Wait for it to stop barfing NMEA */
+    chThdSleepMilliseconds(100);
+
+    /* Clear the read buffer */
+    while(sdGetTimeout(ublox_seriald, TIME_IMMEDIATE) != Q_TIMEOUT);
+
+    return true;
 }
 
 static bool ublox_configure_nav5(void)
@@ -703,7 +791,8 @@ static bool ublox_configure_nav5(void)
     nav5.dyn_model = UBX_CFG_NAV5_DYN_MODEL_STATIONARY;
     nav5.utc_standard = UBX_CFG_NAV5_UTC_STANDARD_USNO;
 
-    return ublox_transmit((uint8_t*)&nav5);
+    return ublox_tx_expect((uint8_t*)&nav5, UBLOX_ACK,
+                           "configure_nav5 didn't get ack");
 }
 
 static bool ublox_configure_rate(void)
@@ -722,7 +811,8 @@ static bool ublox_configure_rate(void)
     rate.nav_rate = 1;
     rate.time_ref = 0;
 
-    return ublox_transmit((uint8_t*)&rate);
+    return ublox_tx_expect((uint8_t*)&rate, UBLOX_ACK,
+                           "configure_rate didn't get ack");
 }
 
 static bool ublox_configure_gnss(void)
@@ -736,24 +826,24 @@ static bool ublox_configure_gnss(void)
     gnss.length = sizeof(gnss.payload);
 
     gnss.msg_ver = 0;
-    gnss.num_trk_ch_hw = 72;
-    gnss.num_trk_ch_use = 72;
-    gnss.num_config_blocks = 6;
+    gnss.num_trk_ch_hw = 32;
+    gnss.num_trk_ch_use = 32;
+    gnss.num_config_blocks = 5;
 
     /* Enable GPS, use all channels */
     gnss.gps_gnss_id = UBX_CFG_GNSS_GNSS_ID_GPS;
-    gnss.gps_res_trk_ch = 72;
-    gnss.gps_max_trk_ch = 72;
+    gnss.gps_res_trk_ch = 32;
+    gnss.gps_max_trk_ch = 32;
     gnss.gps_flags = UBX_CFG_GNSS_FLAGS_ENABLE(1);
 
     /* Leave all other GNSS systems disabled */
     gnss.sbas_gnss_id = UBX_CFG_GNSS_GNSS_ID_SBAS;
-    gnss.galileo_gnss_id = UBX_CFG_GNSS_GNSS_ID_GALILEO;
     gnss.beidou_gnss_id = UBX_CFG_GNSS_GNSS_ID_BEIDOU;
     gnss.qzss_gnss_id = UBX_CFG_GNSS_GNSS_ID_QZSS;
     gnss.glonass_gnss_id = UBX_CFG_GNSS_GNSS_ID_GLONASS;
 
-    return ublox_transmit((uint8_t*)&gnss);
+    return ublox_tx_expect((uint8_t*)&gnss, UBLOX_ACK,
+                           "configure_gnss didn't get ack");
 }
 
 static bool ublox_configure_sbas(void)
@@ -769,7 +859,8 @@ static bool ublox_configure_sbas(void)
     /* Disable SBAS */
     sbas.mode = UBX_CFG_SBAS_MODE_ENABLED(0);
 
-    return ublox_transmit((uint8_t*)&sbas);
+    return ublox_tx_expect((uint8_t*)&sbas, UBLOX_ACK,
+                           "configure_sbas didn't get ack");
 }
 
 static bool ublox_configure_tp5(void)
@@ -785,21 +876,22 @@ static bool ublox_configure_tp5(void)
     /* Enable 1MHz output on TIMEPULSE, always output.
      */
     tp5.tp_idx               = 0;
-    tp5.version              = 1;
+    tp5.version              = 0;
     tp5.ant_cable_delay      = 15;
     tp5.freq_period          = 1000000;
-    tp5.pulse_len_ratio      = 1000;
+    tp5.pulse_len_ratio      = 0xffffffff >> 1;
     tp5.freq_period_lock     = 1000000;
-    tp5.pulse_len_ratio_lock = 1000;
+    tp5.pulse_len_ratio_lock = 0xffffffff >> 1;
+    tp5.user_config_delay    = 0;
     tp5.flags = (
         UBX_CFG_TP5_FLAGS_ACTIVE                    |
         UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ            |
         UBX_CFG_TP5_FLAGS_IS_FREQ                   |
-        UBX_CFG_TP5_FLAGS_IS_LENGTH                 |
         UBX_CFG_TP5_FLAGS_POLARITY                  |
         UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_UTC);
 
-    if(!ublox_transmit((uint8_t*)&tp5)) {
+    if(!ublox_tx_expect((uint8_t*)&tp5, UBLOX_ACK,
+                        "configure_tp5 didn't get first ack")) {
         return false;
     }
 
@@ -808,8 +900,8 @@ static bool ublox_configure_tp5(void)
      * rising edge at top of second,
      * aligned to top of second.
      */
-    tp5.tp_idx               = 0;
-    tp5.version              = 1;
+    tp5.tp_idx               = 1;
+    tp5.version              = 0;
     tp5.ant_cable_delay      = 15;
     tp5.freq_period          = 0;
     tp5.pulse_len_ratio      = 1000;
@@ -825,7 +917,8 @@ static bool ublox_configure_tp5(void)
         UBX_CFG_TP5_FLAGS_POLARITY                  |
         UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_UTC);
 
-    return ublox_transmit((uint8_t*)&tp5);
+    return ublox_tx_expect((uint8_t*)&tp5, UBLOX_ACK,
+                           "configure_tp5 didn't get second ack");
 }
 
 static bool ublox_configure_msg(void)
@@ -843,25 +936,33 @@ static bool ublox_configure_msg(void)
     msg.msg_id    = UBX_NAV_PVT;
     msg.rate      = 1;
 
-    if(!ublox_transmit((uint8_t*)&msg)) {
+    if(!ublox_tx_expect((uint8_t*)&msg, UBLOX_ACK,
+                        "configure_msg didn't get first ack")) {
         return false;
     }
 
     /* Set NAV TIMELS to 1 per second */
+/* Sadly this is only available in protocol 18 and up, but the FW2.01
+ * modules I have are protocol 15...
+ */
+#if 0
     msg.msg_class = UBX_NAV;
     msg.msg_id    = UBX_NAV_TIMELS;
     msg.rate      = 1;
 
-    if(!ublox_transmit((uint8_t*)&msg)) {
+    if(!ublox_tx_expect((uint8_t*)&msg, UBLOX_ACK,
+                        "configure_msg didn't get second ack")) {
         return false;
     }
+#endif
 
     /* Set TIM_TP to 1 per second */
     msg.msg_class = UBX_TIM;
     msg.msg_id    = UBX_TIM_TP;
     msg.rate      = 1;
 
-    return ublox_transmit((uint8_t*)&msg);
+    return ublox_tx_expect((uint8_t*)&msg, UBLOX_ACK,
+                           "configure_msg didn't get third ack");
 }
 
 static THD_WORKING_AREA(ublox_thd_wa, 512);
@@ -881,7 +982,7 @@ static THD_FUNCTION(ublox_thd, arg) {
     }
 
     while(true) {
-        ublox_state_machine(sdGet(ublox_seriald));
+        ublox_state_machine();
     }
 }
 
