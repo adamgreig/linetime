@@ -77,15 +77,16 @@ FRESULT microsd_open_file_inc(FIL* fp)
     }
 }
 
-FRESULT microsd_write(FIL* fp, const void* buf, size_t len)
+FRESULT microsd_write_buf(FIL* fp)
 {
     FRESULT err;
     size_t bytes_written;
 
-    err = f_write(fp, buf, len, &bytes_written);
+    err = f_write(fp, microsd_card_buf, sizeof(microsd_card_buf),
+                  &bytes_written);
     f_sync(fp);
 
-    return err == FR_OK;
+    return err;
 }
 
 static THD_WORKING_AREA(microsd_thd_wa, 4096);
@@ -126,7 +127,10 @@ static THD_FUNCTION(microsd_thd, arg)
         if(buf_space < entry_len) {
             palSetLine(LINE_LED_YLW);
 
-            FRESULT err = microsd_write(&file, mailbox_p, entry_len);
+            /* Zero out the unused buffer space */
+            memset(card_buf_p, 0, buf_space);
+
+            FRESULT err = microsd_write_buf(&file);
 
             /* If writing failed, reopen the card and keep retrying */
             while(err != FR_OK) {
@@ -134,7 +138,7 @@ static THD_FUNCTION(microsd_thd, arg)
                 microsd_card_deinit();
                 microsd_card_try_init(&file_system);
                 if(microsd_open_file_inc(&file)) {
-                    err = microsd_write(&file, mailbox_p, entry_len);
+                    err = microsd_write_buf(&file);
                 }
             }
 
@@ -167,6 +171,11 @@ void microsd_log(uint8_t tag, size_t len, void* data)
 {
     /* Allocate space for new thing on heap, copy it in. */
     uint32_t* p = (uint32_t*)chHeapAlloc(&microsd_heap, len + 8);
+    if(p == NULL) {
+        return;
+    }
+
+    /* Copy the new thing into the allocated space */
     p[0] = LOG_MAGIC | tag;
     p[1] = len;
     memcpy(&p[2], data, len);

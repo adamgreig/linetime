@@ -18,6 +18,8 @@ static void measurements_gpt2_cb(GPTDriver* gptd);
 static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n);
 static void measurements_handle_zc(void);
 static void measurements_handle_pps(void);
+static void cycle_queue_submit(struct mains_cycle *cycle);
+static void wave_queue_submit(struct mains_waveform *wave);
 
 /* Store the DMA'd ADC samples from the mains waveform.
  * Note you have to update the size of the buffer in struct mains_waveform
@@ -204,7 +206,7 @@ static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
         waveform.waveform[i] = (int16_t)buf[i*10] - _mains_bias;
     }
 
-    microsd_log(TAG_MEASUREMENT_WAVE, sizeof(waveform), &waveform);
+    wave_queue_submit(&waveform);
 }
 
 static void measurements_handle_zc()
@@ -278,7 +280,7 @@ static void measurements_handle_zc()
     }
     mains_cycle_out.rms = sqrt((double)sum_squares / (double)waveform_len);
 
-    microsd_log(TAG_MEASUREMENT_ZC, sizeof(mains_cycle_out), &mains_cycle_out);
+    cycle_queue_submit(&mains_cycle_out);
 
     /* Save the current waveform details for use as the previous waveform
      * next time around.
@@ -346,12 +348,115 @@ static void measurements_gpt2_cb(GPTDriver* gptd)
 }
 
 static THD_WORKING_AREA(mains_bias_thd_wa, 128);
-static THD_FUNCTION(mains_bias_thd, arg) {
+static THD_FUNCTION(mains_bias_thd, arg)
+{
     (void)arg;
     while(true) {
         mains_bias = measurements_read_mains_bias();
         chThdSleepMilliseconds(100);
     }
+}
+
+#define CYCLE_QUEUE_SIZE (64)
+static memory_pool_t cycle_queue_pool;
+static uint8_t cycle_queue_pool_buf[CYCLE_QUEUE_SIZE*sizeof(struct mains_cycle)]
+    __attribute__((aligned(sizeof(stkalign_t))))
+    __attribute__((section(".MAIN_STACK_RAM")));
+static mailbox_t cycle_queue_mbox;
+static msg_t cycle_queue_mbox_buf[CYCLE_QUEUE_SIZE]
+    __attribute__((aligned(sizeof(stkalign_t))))
+    __attribute__((section(".MAIN_STACK_RAM")));
+static THD_WORKING_AREA(cycle_queue_thd_wa, 256);
+static THD_FUNCTION(cycle_queue_thd, arg)
+{
+    (void)arg;
+    chPoolObjectInit(&cycle_queue_pool, sizeof(struct mains_cycle), NULL);
+    chPoolLoadArray(&cycle_queue_pool, cycle_queue_pool_buf, CYCLE_QUEUE_SIZE);
+    chMBObjectInit(&cycle_queue_mbox, cycle_queue_mbox_buf, CYCLE_QUEUE_SIZE);
+
+    msg_t mbox_r;
+    void* mbox_p;
+
+    while(true) {
+        mbox_r = chMBFetch(&cycle_queue_mbox, (msg_t*)&mbox_p, TIME_INFINITE);
+        if(mbox_r != MSG_OK || mbox_p == 0) {
+            continue;
+        }
+
+        microsd_log(TAG_MEASUREMENT_ZC, sizeof(struct mains_cycle), mbox_p);
+
+        chPoolFree(&cycle_queue_pool, mbox_p);
+    }
+}
+
+static void cycle_queue_submit(struct mains_cycle *cycle)
+{
+    chSysLockFromISR();
+    void* msg = chPoolAllocI(&cycle_queue_pool);
+    if(msg == NULL) {
+        return;
+    }
+    chSysUnlockFromISR();
+
+    memcpy(msg, cycle, sizeof(struct mains_cycle));
+
+    chSysLockFromISR();
+    msg_t rv = chMBPostI(&cycle_queue_mbox, (intptr_t)msg);
+    if(rv != MSG_OK) {
+        chPoolFreeI(&cycle_queue_pool, msg);
+    }
+    chSysUnlockFromISR();
+}
+
+#define WAVE_QUEUE_SIZE (64)
+static memory_pool_t wave_queue_pool;
+static uint8_t wave_queue_pool_buf[WAVE_QUEUE_SIZE*sizeof(struct mains_waveform)]
+    __attribute__((aligned(sizeof(stkalign_t))))
+    __attribute__((section(".MAIN_STACK_RAM")));
+static mailbox_t wave_queue_mbox;
+static msg_t wave_queue_mbox_buf[WAVE_QUEUE_SIZE]
+    __attribute__((aligned(sizeof(stkalign_t))))
+    __attribute__((section(".MAIN_STACK_RAM")));
+static THD_WORKING_AREA(wave_queue_thd_wa, 256);
+static THD_FUNCTION(wave_queue_thd, arg)
+{
+    (void)arg;
+    chPoolObjectInit(&wave_queue_pool, sizeof(struct mains_waveform), NULL);
+    chPoolLoadArray(&wave_queue_pool, wave_queue_pool_buf, WAVE_QUEUE_SIZE);
+    chMBObjectInit(&wave_queue_mbox, wave_queue_mbox_buf, WAVE_QUEUE_SIZE);
+
+    msg_t mbox_r;
+    void* mbox_p;
+
+    while(true) {
+        mbox_r = chMBFetch(&wave_queue_mbox, (msg_t*)&mbox_p, TIME_INFINITE);
+        if(mbox_r != MSG_OK || mbox_p == 0) {
+            continue;
+        }
+
+        microsd_log(TAG_MEASUREMENT_WAVE, sizeof(struct mains_waveform), mbox_p);
+
+        chPoolFree(&wave_queue_pool, mbox_p);
+    }
+}
+
+static void wave_queue_submit(struct mains_waveform *wave)
+{
+    chSysLockFromISR();
+    void* msg = chPoolAllocI(&wave_queue_pool);
+    if(msg == NULL) {
+        return;
+    }
+    chSysUnlockFromISR();
+
+    memcpy(msg, wave, sizeof(struct mains_waveform));
+
+    chSysLockFromISR();
+    msg_t rv = chMBPostI(&wave_queue_mbox, (intptr_t)msg);
+    if(rv != MSG_OK) {
+        chPoolFreeI(&wave_queue_pool, msg);
+    }
+    chSysUnlockFromISR();
 }
 
 void measurements_init()
@@ -361,6 +466,12 @@ void measurements_init()
 
     /* Ensure we don't start reporting times until we know them. */
     prev_pps.utc_valid = false;
+
+    /* Start threads to submit items onwards */
+    chThdCreateStatic(cycle_queue_thd_wa, sizeof(cycle_queue_thd_wa),
+                      NORMALPRIO, cycle_queue_thd, NULL);
+    chThdCreateStatic(wave_queue_thd_wa, sizeof(wave_queue_thd_wa),
+                      NORMALPRIO, wave_queue_thd, NULL);
 
     /* Start up the ADCs */
     measurements_adcs_init();
