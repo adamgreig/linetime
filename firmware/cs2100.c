@@ -168,6 +168,8 @@ void cs2100_configure(I2CDriver* i2cd)
 
 void cs2100_set_pll(void)
 {
+    chSysLock();
+
     /* Turn on HSE with bypass. */
     RCC->CR |= RCC_CR_HSEON | RCC_CR_HSEBYP;
     /* Wait for HSE to be stable. */
@@ -197,4 +199,6 @@ void cs2100_set_pll(void)
     RCC->CFGR |= STM32_SW_PLL;
     /* Wait for PLL to be used as system clock. */
     while((RCC->CFGR & RCC_CFGR_SWS) != (STM32_SW_PLL << 2));
+
+    chSysUnlock();
 }

@@ -60,13 +60,13 @@ endif
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
-  USE_PROCESS_STACKSIZE = 0x400
+  USE_PROCESS_STACKSIZE = 0x800
 endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
 # stack is used for processing interrupts and exceptions.
 ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
-  USE_EXCEPTIONS_STACKSIZE = 0x400
+  USE_EXCEPTIONS_STACKSIZE = 0x800
 endif
 
 # Enables the use of FPU (no, softfp, hard).
@@ -101,6 +101,7 @@ include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
 
 BOARDSRC= board.c
 BOARDINC= .
@@ -117,7 +118,10 @@ CSRC = $(STARTUPSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
-       main.c ublox.c cs2100.c measurements.c
+       $(FATFSSRC) \
+       $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
+       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
+       main.c ublox.c cs2100.c measurements.c microsd.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -149,8 +153,9 @@ ASMXSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
 INCDIR = $(CHIBIOS)/os/license \
          $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
-         $(HALINC) $(PLATFORMINC) $(BOARDINC) \
-         $(CHIBIOS)/os/various
+         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(FATFSINC) \
+         $(CHIBIOS)/os/various \
+         $(CHIBIOS)/os/hal/lib/streams
 
 #
 # Project, sources and paths

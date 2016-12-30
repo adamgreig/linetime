@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "ublox.h"
+#include "microsd.h"
 #include "ch.h"
 #include "hal.h"
 
@@ -605,6 +606,7 @@ static enum ublox_result ublox_state_machine()
                     if(id == UBX_NAV_PVT) {
                         memcpy(nav_pvt.payload, payload, length);
                         /* TODO: handle receiving a PVT */
+                        microsd_log(TAG_GPS_PVT, length, payload);
                         return UBLOX_NAV_PVT;
                     } else if(id == UBX_NAV_TIMELS) {
                         memcpy(nav_timels.payload, payload, length);
@@ -903,10 +905,10 @@ static bool ublox_configure_tp5(void)
     tp5.tp_idx               = 1;
     tp5.version              = 0;
     tp5.ant_cable_delay      = 15;
-    tp5.freq_period          = 0;
-    tp5.pulse_len_ratio      = 1000;
+    tp5.freq_period          = 1;  /* TODO: DEVELOPMENT: s/1/0 later */
+    tp5.pulse_len_ratio      = 10000;
     tp5.freq_period_lock     = 1;
-    tp5.pulse_len_ratio_lock = 1000;
+    tp5.pulse_len_ratio_lock = 10000;
     tp5.flags = (
         UBX_CFG_TP5_FLAGS_ACTIVE                    |
         UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ            |
@@ -965,7 +967,7 @@ static bool ublox_configure_msg(void)
                            "configure_msg didn't get third ack");
 }
 
-static THD_WORKING_AREA(ublox_thd_wa, 512);
+static THD_WORKING_AREA(ublox_thd_wa, 1024);
 static THD_FUNCTION(ublox_thd, arg) {
     (void)arg;
     /* We'll reset the uBlox so it's in a known state */

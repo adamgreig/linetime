@@ -438,7 +438,7 @@
                                         PIN_PUPD_PULLUP(GPIOA_LCD_R5) | \
                                         PIN_PUPD_PULLDOWN(GPIOA_SWDIO) | \
                                         PIN_PUPD_PULLDOWN(GPIOA_SWCLK) | \
-                                        PIN_PUPD_PULLUP(GPIOA_MAINS_ZC))
+                                        PIN_PUPD_FLOATING(GPIOA_MAINS_ZC))
 #define VAL_GPIOA_ODR                  (PIN_OD_HIGH(GPIOA_PIN0) | \
                                         PIN_OD_HIGH(GPIOA_RMII_REF_CLK) | \
                                         PIN_OD_HIGH(GPIOA_RMII_MDIO) | \

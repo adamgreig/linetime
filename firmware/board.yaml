@@ -84,7 +84,7 @@ pins:
   # Mains on ADC1 and ADC2 and TIM2 ch1
   MAINS_BIAS: pc3, floating, analog
   MAINS_WAVE: pc2, floating, analog
-  MAINS_ZC: pa15, af1
+  MAINS_ZC: pa15, floating, af1
 
   # LEDs
   LED_RED: pb5, output, startlow

@@ -8,6 +8,7 @@
 
 #include "ublox.h"
 #include "measurements.h"
+#include "microsd.h"
 
 static void measurements_adcs_init(void);
 static void measurements_timers_init(void);
@@ -26,7 +27,7 @@ static void measurements_handle_pps(void);
 static adcsample_t mains_wave_buf[MAINS_WAVE_BUFLEN];
 
 /* High speed timer frequency */
-#define TIMER_FREQ (192000000)
+#define TIMER_FREQ (96000000)
 
 /* Hold the measured information about a mains cycle */
 static struct {
@@ -36,7 +37,7 @@ static struct {
     /* ADC sample counter value at time of ZC */
     gptcnt_t adc_timestamp;
 
-    /* 192MHz timer value when ZC at start of cycle detected */
+    /* 96MHz timer value when ZC at start of cycle detected */
     gptcnt_t zc_timestamp;
 
     /* UTC value corresponding to zc_timestamp, if available */
@@ -96,20 +97,22 @@ static adcsample_t measurements_read_mains_bias()
 static void measurements_timers_init()
 {
     /* Configure GPT2 to precisely time the GPS PPS and the mains
-     * zero-crossing events. It runs at full speed 192MHz.
+     * zero-crossing events. It runs at full speed 96MHz.
      * We interrupt on both CC1 (mains zc) and CC2 (PPS).
      */
     static const GPTConfig gpt2_cfg = {
         .frequency = TIMER_FREQ,
         .callback = measurements_gpt2_cb,
         .cr2 = 0,
-        .dier = STM32_TIM_DIER_CC1IE | STM32_TIM_DIER_CC2IE,
+        .dier = 0,
     };
+    gptStart(&GPTD2, &gpt2_cfg);
     /* Set CC1 and CC2 to input capture mode on TI1 and TI2. */
     GPTD2.tim->CCMR1 = STM32_TIM_CCMR1_CC1S(1) | STM32_TIM_CCMR1_CC2S(1);
     /* Enable CC1 and CC2, non-inverted rising-edge. */
     GPTD2.tim->CCER = STM32_TIM_CCER_CC1E | STM32_TIM_CCER_CC2E;
-    gptStart(&GPTD2, &gpt2_cfg);
+    /* Have to set this here rather than in gpt2_cfg as gptStart clears it.. */
+    GPTD2.tim->DIER = STM32_TIM_DIER_CC1IE | STM32_TIM_DIER_CC2IE;
     gptStartContinuous(&GPTD2, 0xFFFFFFFF);
 
     /* Configure GPT9 to run off GPT3's TRGO,
@@ -117,14 +120,14 @@ static void measurements_timers_init()
      * resetting at the same period as the ADC buffer size.
      */
     static const GPTConfig gpt9_cfg = {
-        .frequency = 1000000 /* not actually used */,
+        .frequency = 192000000 /* to get a prescaler of 0 */,
         .callback = NULL,
         .cr2 = 0,
         .dier = 0,
     };
     /* Trigger from TIM3 TRGO, and clock from that trigger */
-    GPTD9.tim->SMCR =   STM32_TIM_SMCR_TS(1) | STM32_TIM_SMCR_SMS(7);
     gptStart(&GPTD9, &gpt9_cfg);
+    GPTD9.tim->SMCR =   STM32_TIM_SMCR_TS(1) | STM32_TIM_SMCR_SMS(7);
     gptStartContinuous(&GPTD9, MAINS_WAVE_BUFLEN);
 
     /* Configure GPT3 for 1MHz clock,
@@ -138,9 +141,10 @@ static void measurements_timers_init()
         .cr2 = STM32_TIM_CR2_MMS(2),
         .dier = 0,
     };
-    GPTD3.tim->CCR[3] = 20;
     gptStart(&GPTD3, &gpt3_cfg);
-    gptStartContinuous(&GPTD3, 20);
+    GPTD3.tim->CCR[3] = 18;
+    GPTD3.tim->CCER = STM32_TIM_CCER_CC4E;
+    gptStartContinuous(&GPTD3, 19);
 
 }
 
@@ -179,14 +183,13 @@ static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
 {
     (void)adcp;
 
-    /* TODO get a mains_waveform struct from a queue or whatever */
     struct mains_waveform waveform;
 
     /* Get current timestamp and most recent PPS timestamp */
     uint64_t delta_ticks    = (GPTD2.tim->CNT) - prev_pps.timestamp;
     uint64_t delta_sub_ms   = (delta_ticks<<32) / (TIMER_FREQ / 1000);
-    uint64_t utc_tow_sub_ms = prev_pps.utc_tow_sub_ms + delta_sub_ms;
-    uint16_t utc_week       = prev_pps.utc_week;
+    waveform.utc_tow_sub_ms = prev_pps.utc_tow_sub_ms + delta_sub_ms;
+    waveform.utc_week       = prev_pps.utc_week;
 
     /* Check buffers are the right length */
     chDbgAssert(n == MAINS_WAVE_BUFLEN/2,
@@ -205,9 +208,7 @@ static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
         waveform.waveform[i] = (int16_t)buf[i*10] - _mains_bias;
     }
 
-    /* TODO submit the struct mains_waveform to a queue. */
-    (void)utc_tow_sub_ms;
-    (void)utc_week;
+    microsd_log(TAG_MEASUREMENT_WAVE, sizeof(waveform), &waveform);
 }
 
 static void measurements_handle_zc()
@@ -216,6 +217,15 @@ static void measurements_handle_zc()
     uint32_t zc_ts = GPTD2.tim->CCR[0];
     uint32_t adc_ts = GPTD9.tim->CNT;
     uint32_t pps_ts = prev_pps.timestamp;
+
+    /* Bodge filter. Quit early if we're within 5ms of the last interrupt,
+     * since it won't be a real transition.
+     */
+    if(prev_mains_cycle.timestamps_valid &&
+       zc_ts - prev_mains_cycle.zc_timestamp < (TIMER_FREQ/200))
+    {
+        return;
+    }
 
     /* Quit early if we don't have a valid previous measurement,
      * or if we don't currently have UTC available.
@@ -272,7 +282,7 @@ static void measurements_handle_zc()
     }
     mains_cycle_out.rms = sqrt((double)sum_squares / (double)waveform_len);
 
-    /* TODO: submit the filled-in mains_cycle_out for queueing. */
+    microsd_log(TAG_MEASUREMENT_ZC, sizeof(mains_cycle_out), &mains_cycle_out);
 
     /* Save the current waveform details for use as the previous waveform
      * next time around.
@@ -311,6 +321,7 @@ static void measurements_handle_pps()
         prev_pps.utc_tow_sub_ms = 0;
         prev_pps.utc_week = 0;
     }
+    palSetLine(LINE_LED_YLW);
 }
 
 /* Handle TIM2 input capture events */
@@ -332,7 +343,7 @@ static void measurements_gpt2_cb(GPTDriver* gptd)
 
 }
 
-static THD_WORKING_AREA(mains_bias_thd_wa, 128);
+static THD_WORKING_AREA(mains_bias_thd_wa, 1024);
 static THD_FUNCTION(mains_bias_thd, arg) {
     (void)arg;
     while(true) {
