@@ -1,36 +1,13 @@
 # Firmware Outline/To-Do
 
-x * GPS set-up:
-x    * Disable NMEA messages
-x    * Configure for timing mode
-x    * Generate some TIMEPULSE1 freq (1MHz? some even multiple of 48MHz?)
-x    * Generaet 1PPS TIMEPULSE2
-x    * Other settings (static location, antenna power, UTC aligned PPS, etc)
-x    * Request/parse UTC time information
-
-x * System clock set-up:
-x    * Program CS2100 to generate 26MHz reference
-x    * Enable HSE, wait HSE RDY
-x    * Swap SW to HSI
-x    * Disable PLL
-x    * Swap PLL src to HSE
-x    * Reconfigure PLL M value to HSE/2 = 13
-x    * Enable PLL, wait PLL RDY
-x    * Swap SW to PLL
-
-* Mains:
-x    * Set up TIM2 for fast operation, timestamp CH1 and CH2 edges
-x    * Set up ADC1 for constantly measuring MAINS_WAVE
-x    * Set up ADC2 for occasional measurements of MAINS_BIAS
-x    * Compute mains ZC timestamp, frequency, RMS, subsampled waveform
-x    * On mains adc half/full interrupts, timestamp, subsample and enqueue waveform
-
-* MicroSD / Queue:
-    * Store a 16kB buffer in ram which we add to from the mains and pop from
-      during ethernet write operations (1/s)
-    * Write the buffer to the SD card if it gets full
-    * When we have working ethernet again, read buffers from SD card to
-      transmit first, quickly
+* Technical Debt
+    * Remove firmware 18 GPS stuff like TIMELS
+    * Remove all mention of TIM-TP. It wasn't meant to be. Alas.
+    * Correctly use NAV-PVT and perhaps TIM-TIMEUTC to determine the
+      top of the coming PPS pulse
+    * Consider therefore moving away from week+tow representation
+    * Tidy up queue system and split out from microSD so ethernet can use it
+    * Fix mains RMS measurements
 
 * Ethernet:
     * Read MAC address from ROM
