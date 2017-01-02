@@ -615,14 +615,7 @@ static enum ublox_result ublox_state_machine()
                         ublox_upcoming_tp_time.tow_sub_ms =
                             (uint64_t)nav_pvt.i_tow << 32;
 
-                        if(nav_pvt.valid & 7) {
-                            ublox_upcoming_tp_time.valid = true;
-                        } else {
-                            ublox_upcoming_tp_time.valid = false;
-                        }
-
-                        /* TODO lol */
-                        ublox_upcoming_tp_time.valid = true;
+                        ublox_upcoming_tp_time.valid = nav_pvt.valid & 7;
 
                         return UBLOX_NAV_PVT;
                     } else if(id == UBX_NAV_TIMELS) {

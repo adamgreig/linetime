@@ -29,7 +29,7 @@ static void wave_queue_submit(struct mains_waveform *wave);
 static adcsample_t mains_wave_buf[MAINS_WAVE_BUFLEN];
 
 /* High speed timer frequency */
-#define TIMER_FREQ (96000000)
+#define TIMER_FREQ (100000000)
 
 /* Hold the measured information about a mains cycle */
 static struct {
@@ -39,7 +39,7 @@ static struct {
     /* ADC sample counter value at time of ZC */
     gptcnt_t adc_timestamp;
 
-    /* 96MHz timer value when ZC at start of cycle detected */
+    /* 100MHz timer value when ZC at start of cycle detected */
     gptcnt_t zc_timestamp;
 
     /* UTC value corresponding to zc_timestamp, if available */
@@ -99,7 +99,7 @@ static adcsample_t measurements_read_mains_bias()
 static void measurements_timers_init()
 {
     /* Configure GPT2 to precisely time the GPS PPS and the mains
-     * zero-crossing events. It runs at full speed 96MHz.
+     * zero-crossing events. It runs at full speed 100MHz.
      * We interrupt on both CC1 (mains zc) and CC2 (PPS).
      */
     static const GPTConfig gpt2_cfg = {
@@ -122,7 +122,7 @@ static void measurements_timers_init()
      * resetting at the same period as the ADC buffer size.
      */
     static const GPTConfig gpt9_cfg = {
-        .frequency = 192000000 /* to get a prescaler of 0 */,
+        .frequency = 200000000 /* to get a prescaler of 0 */,
         .callback = NULL,
         .cr2 = 0,
         .dier = 0,
@@ -262,6 +262,7 @@ static void measurements_handle_zc()
      * of low-frequency cycles. Detect and handle gracefully.
      */
 /* TODO this crashes, waveform_len ends up ginormous, fix me */
+/* it's because waveform_len needs to be mod 4096.. */
 #if 0
     size_t i;
     int64_t sum_squares = 0;

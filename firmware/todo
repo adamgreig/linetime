@@ -6,6 +6,8 @@
     * Correctly use NAV-PVT and perhaps TIM-TIMEUTC to determine the
       top of the coming PPS pulse
     * Consider therefore moving away from week+tow representation
+    * For example, use raw TIM2 CNT plus a 32 bit overflow counter for 64bit
+      "time since boot" + log the corresponding PVT times
     * Tidy up queue system and split out from microSD so ethernet can use it
     * Fix mains RMS measurements
 

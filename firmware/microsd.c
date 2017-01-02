@@ -86,6 +86,10 @@ FRESULT microsd_write_buf(FIL* fp)
                   &bytes_written);
     f_sync(fp);
 
+    if(bytes_written != sizeof(microsd_card_buf)) {
+        err = FR_DENIED;
+    }
+
     return err;
 }
 
