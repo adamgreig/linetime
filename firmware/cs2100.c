@@ -56,7 +56,7 @@ static void cs2100_error(const char* err);
 static bool cs2100_read(uint8_t reg_addr, uint8_t* data);
 static bool cs2100_write(uint8_t reg_addr, uint8_t data);
 
-static I2CConfig i2c_cfg = {
+static const I2CConfig i2c_cfg = {
     /* Example configuration for I2CCLK=48MHz and 10kHz SCL */
     .timingr = (
         STM32_TIMINGR_PRESC(0x0B)       |
@@ -170,8 +170,8 @@ void cs2100_set_pll(void)
 {
     chSysLock();
 
-    /* Turn on HSE with bypass. */
-    RCC->CR |= RCC_CR_HSEON | RCC_CR_HSEBYP;
+    /* Turn on HSE with bypass and clock security. */
+    RCC->CR |= RCC_CR_HSEON | RCC_CR_HSEBYP | RCC_CR_CSSON;
     /* Wait for HSE to be stable. */
     while((RCC->CR & RCC_CR_HSERDY) == 0);
 

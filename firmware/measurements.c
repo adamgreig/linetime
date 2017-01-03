@@ -7,71 +7,362 @@
 #include "hal.h"
 
 #include "ublox.h"
-#include "measurements.h"
 #include "microsd.h"
 
+#include "measurements.h"
+
+/***************************************************************** CONSTANTS */
+/* High speed timer frequency */
+#define TIMER_FREQ (100000000)
+#define NS_PER_TICK (1000000000 / TIMER_FREQ)
+/*****************************************************************************/
+
+
+/**************************************************************** PROTOTYPES */
 static void measurements_adcs_init(void);
 static void measurements_timers_init(void);
-static adcsample_t measurements_read_mains_bias(void);
 static void measurements_error(const char* err);
 static void measurements_gpt2_cb(GPTDriver* gptd);
 static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n);
 static void measurements_handle_zc(void);
 static void measurements_handle_pps(void);
-static void cycle_queue_submit(struct mains_cycle *cycle);
-static void wave_queue_submit(struct mains_waveform *wave);
+static struct ublox_utc time_capture_get_utc(gptcnt_t pps_ts);
+/*****************************************************************************/
 
-/* Store the DMA'd ADC samples from the mains waveform.
- * Note you have to update the size of the buffer in struct mains_waveform
- * to 0.05 * MAINS_WAVE_BUFLEN if you change it here.
- */
-#define MAINS_WAVE_BUFLEN (5120)
-static adcsample_t mains_wave_buf[MAINS_WAVE_BUFLEN];
-
-/* High speed timer frequency */
-#define TIMER_FREQ (100000000)
-
+/******************************************************************* STRUCTS */
 /* Hold the measured information about a mains cycle */
-static struct {
-    /* Record whether this measurement has been set-up yet or not. */
-    bool timestamps_valid;
-
-    /* ADC sample counter value at time of ZC */
-    gptcnt_t adc_timestamp;
-
-    /* 100MHz timer value when ZC at start of cycle detected */
+struct mains_cycle_measurement {
     gptcnt_t zc_timestamp;
+    gptcnt_t adc_timestamp;
+    gptcnt_t pps_timestamp;
+};
 
-    /* UTC value corresponding to zc_timestamp, if available */
-    bool zc_utc_available;
-    uint16_t zc_utc_week;
-    uint64_t zc_utc_tow_sub_ms;
-} prev_mains_cycle;
+struct time_capture_item {
+    gptcnt_t pps_timestamp;
+    struct ublox_utc utc;
+};
+/*****************************************************************************/
 
-/* Store an output struct mains_cycle, filled in by the ZC ISR */
-static struct mains_cycle mains_cycle_out;
 
-/* Store the TIM2 count at the last PPS, and the corresponding UTC time */
-static volatile struct {
-    gptcnt_t timestamp;
-    bool utc_valid;
-    uint16_t utc_week;
-    uint64_t utc_tow_sub_ms;
-} prev_pps;
-
+/************************************************************ STATIC GLOBALS */
 /* Store a recent mains bias reading */
 static volatile adcsample_t mains_bias;
+/*****************************************************************************/
 
+
+/******************************************************************* BUFFERS */
+/* Store the DMA'd ADC samples from the mains waveform.
+ * Note you have to update the size of the buffer in struct mains_waveform
+ * to 1/8 * MAINS_WAVE_BUFLEN if you change it here.
+ */
+#define MAINS_WAVE_BUFLEN (1024)
+static adcsample_t mains_wave_buf[MAINS_WAVE_BUFLEN];
+
+/* Store PPS timestamps and corresponding UTC times. */
+#define TIME_BUF_SIZE (4)
+static struct time_capture_item time_capture_buf[TIME_BUF_SIZE] = {{0}};
+static size_t time_capture_buf_idx = 0;
+static mutex_t time_capture_buf_mtx;
+static gptcnt_t time_capture_pps_timestamp;
+static binary_semaphore_t time_capture_pps_bs;
+
+/* Store the memory pool and mailbox for the cycle queue. */
+#define CYCLE_QUEUE_SIZE (128)
+static memory_pool_t cycle_queue_pool;
+static uint8_t cycle_queue_pool_buf[CYCLE_QUEUE_SIZE
+                                    * sizeof(struct mains_cycle_measurement)]
+    __attribute__((aligned(sizeof(stkalign_t))));
+static mailbox_t cycle_queue_mbox;
+static msg_t cycle_queue_mbox_buf[CYCLE_QUEUE_SIZE]
+    __attribute__((aligned(sizeof(stkalign_t))));
+
+/* Store the memory pool and mailbox for the waveform queue. */
+#define WAVE_QUEUE_SIZE (16)
+static memory_pool_t wave_queue_pool;
+static uint8_t wave_queue_pool_buf[WAVE_QUEUE_SIZE
+                                   * sizeof(struct mains_waveform)]
+    __attribute__((aligned(sizeof(stkalign_t))));
+static mailbox_t wave_queue_mbox;
+static msg_t wave_queue_mbox_buf[WAVE_QUEUE_SIZE]
+    __attribute__((aligned(sizeof(stkalign_t))));
+/*****************************************************************************/
+
+
+/************************************************************ ERROR HANDLING */
 static void measurements_error(const char* err)
 {
     /* TODO error handling */
     chSysHalt(err);
 }
+/*****************************************************************************/
 
-/* Read and return the MAINS_BIAS voltage */
-static adcsample_t measurements_read_mains_bias()
+
+/******************************************************************* THREADS */
+/* Time capture thread.
+ * Associates PPS timestamps with UTC times, and provides a blocking interface
+ * to find out what UTC time a given PPS timestamp was.
+ */
+static THD_WORKING_AREA(time_capture_thd_wa, 512);
+static THD_FUNCTION(time_capture_thd, arg)
 {
-    adcsample_t result;
+    (void)arg;
+
+    msg_t pps_rv, utc_rv;
+    gptcnt_t pps_ts;
+    struct ublox_utc pps_utc;
+
+    while(true) {
+
+        /* Wait for a new PPS */
+        pps_rv = chBSemWaitTimeout(&time_capture_pps_bs, MS2ST(1001));
+        if(pps_rv != MSG_OK) {
+            /* Probably the PPS has stopped. We'll just try again without
+             * touching the time capture buffer.
+             */
+            continue;
+        }
+
+        /* Hold buffer lock while we wait for UTC */
+        chMtxLock(&time_capture_buf_mtx);
+
+        pps_ts = time_capture_pps_timestamp;
+
+        /* Now wait for corresponding UTC */
+        utc_rv = chBSemWaitTimeout(&ublox_last_utc_bs, MS2ST(500));
+        if(utc_rv != MSG_OK) {
+            /* Probably we lost lock or UTC is not fully resolved despite PPS.
+             * Release the lock but don't update the buffer.
+             */
+            chMtxUnlock(&time_capture_buf_mtx);
+            continue;
+        }
+        pps_utc = ublox_last_utc;
+
+        time_capture_buf[time_capture_buf_idx].pps_timestamp = pps_ts;
+        time_capture_buf[time_capture_buf_idx].utc = pps_utc;
+        time_capture_buf_idx = (time_capture_buf_idx + 1) % TIME_BUF_SIZE;
+
+        /* Unlock buffer now we've had the next UTC */
+        chMtxUnlock(&time_capture_buf_mtx);
+    }
+}
+
+static struct ublox_utc time_capture_get_utc(gptcnt_t pps_ts) {
+    size_t i;
+    struct ublox_utc utc = { .valid = false };
+
+    /* Wait 1ms to ensure any very-recent PPS has already caused the
+     * capture thread to take the buffer lock.
+     */
+    chThdSleepMilliseconds(1);
+
+    chMtxLock(&time_capture_buf_mtx);
+    for(i=0; i<TIME_BUF_SIZE; i++) {
+        if(time_capture_buf[i].pps_timestamp == pps_ts) {
+            utc = time_capture_buf[i].utc;
+            break;
+        }
+    }
+    chMtxUnlock(&time_capture_buf_mtx);
+
+    return utc;
+}
+
+/* Cycle queue processing thread.
+ * Each incoming cycle consists of 3 timestamps:
+ * the captured time of the zero crossing, the associated time of the
+ * most recent PPS, and the current ADC sample number.
+ * We need to resolve this cycle's UTC time, period, and RMS voltage,
+ * then submit it for upload/storage.
+ */
+static THD_WORKING_AREA(cycle_queue_thd_wa, 256);
+static THD_FUNCTION(cycle_queue_thd, arg)
+{
+    (void)arg;
+
+    msg_t mbox_r;
+    struct mains_cycle_measurement *measurement = NULL;
+
+    /* Store information about the previous measurement processed */
+    bool prev_measurement_valid = false;
+    struct mains_cycle_measurement prev_measurement = {0};
+
+    /* Store a completed cycle for submission to further storage/upload. */
+    struct mains_cycle cycle;
+
+    /* Store the UTC time associated with a cycle's PPS timestamp */
+    struct ublox_utc cycle_utc;
+
+    while(true) {
+        /* Wait for a message about a new cycle measurement */
+        mbox_r = chMBFetch(&cycle_queue_mbox,
+                           (msg_t*)&measurement, TIME_INFINITE);
+        if(mbox_r != MSG_OK || measurement == NULL) {
+            chSysHalt("C1");
+            continue;
+        }
+
+        /* If this reading is within 5ms of the previous good reading, it's
+         * not a real mains cycle, so immediately discard it to prevent
+         * spamming.
+         */
+        if(prev_measurement_valid &&
+           (measurement->zc_timestamp - prev_measurement.zc_timestamp)
+           < (NS_PER_TICK * 5000))
+        {
+            chSysHalt("C2");
+            chPoolFree(&cycle_queue_pool, measurement);
+            continue;
+        }
+
+        /* If we don't have valid UTC time, discard this reading.
+         * In theory we could try and work it out later, but it's not worth
+         * it - we expect to just always have valid UTC except at startup.
+         */
+        if(time_capture_get_utc(measurement->pps_timestamp).valid == false) {
+            prev_measurement_valid = false;
+            chPoolFree(&cycle_queue_pool, measurement);
+            continue;
+        }
+
+        /* If the previous measurement wasn't valid, but we do have a resolved
+         * time for this measurement, we'll store this
+         * as a valid previous measurement and not process further.
+         */
+        if(prev_measurement_valid == false) {
+            prev_measurement = *measurement;
+            prev_measurement_valid = true;
+            chPoolFree(&cycle_queue_pool, measurement);
+            continue;
+        }
+
+        /* Now we're primarily concerned with the previous measurement -
+         * we can now work out its period and its RMS. The new measurement
+         * is only useful for finding the period - we'll otherwise store it
+         * now and process it next time.
+         * The `cycle` we now fill out refers to `prev_measurement`.
+         */
+
+        /* Get the UTC time corresponding to the previous cycle.
+         * It really should be valid - or we wouldn't have stored it -
+         * but we'll check just in case.
+         */
+        cycle_utc = time_capture_get_utc(prev_measurement.pps_timestamp);
+        if(cycle_utc.valid == false) {
+            chSysHalt("C5");
+            prev_measurement_valid = false;
+            chPoolFree(&cycle_queue_pool, measurement);
+            continue;
+        }
+
+        /* Copy valid UTC time into this cycle */
+        cycle.utc_year = cycle_utc.year;
+        cycle.utc_month = cycle_utc.month;
+        cycle.utc_day = cycle_utc.day;
+        cycle.utc_hour = cycle_utc.hour;
+        cycle.utc_minute = cycle_utc.minute;
+        cycle.utc_second = cycle_utc.second;
+
+        /* Compute nanoseconds since PPS */
+        cycle.nanoseconds = (prev_measurement.zc_timestamp
+                             - prev_measurement.pps_timestamp) * NS_PER_TICK;
+
+        /* Compute period */
+        cycle.period_ns = (measurement->zc_timestamp
+                           - prev_measurement.zc_timestamp) * NS_PER_TICK;
+
+        /* Compute RMS */
+        size_t i;
+        double sum_squares = 0.0;
+        size_t start_idx = prev_measurement.adc_timestamp;
+        size_t buflen = MAINS_WAVE_BUFLEN;
+        size_t waveform_len = (measurement->adc_timestamp
+                               - prev_measurement.adc_timestamp) % buflen;
+        uint16_t _mains_bias = mains_bias;
+        for(i=start_idx; i!=(start_idx+waveform_len)%buflen; i=(i+1)%buflen) {
+            double sample = mains_wave_buf[i] - _mains_bias;
+            sum_squares += sample * sample;
+        }
+        double rms = sqrt(sum_squares / waveform_len);
+        cycle.rms = (uint16_t)(rms * (1<<7));
+
+        /* Submit this cycle to the SD card heap */
+        microsd_log(TAG_MEASUREMENT_ZC, sizeof(cycle), &cycle);
+
+        /* Store this measurement for use next time */
+        prev_measurement = *measurement;
+        prev_measurement_valid = true;
+
+        /* Remove this measurement from the memory pool */
+        chPoolFree(&cycle_queue_pool, measurement);
+    }
+}
+
+/* Waveform queue processing thread.
+ * We just need to resolve the UTC time for each waveform and then
+ * submit it for upload/storage.
+ */
+static THD_WORKING_AREA(wave_queue_thd_wa, 256);
+static THD_FUNCTION(wave_queue_thd, arg)
+{
+    (void)arg;
+
+    msg_t mbox_r;
+    struct mains_waveform *waveform = NULL;
+    struct ublox_utc waveform_utc = {0};
+
+    while(true) {
+        /* Wait for a message about a new waveform */
+        mbox_r = chMBFetch(&wave_queue_mbox, (msg_t*)&waveform, TIME_INFINITE);
+        if(mbox_r != MSG_OK || waveform == NULL) {
+            chSysHalt("W1");
+            continue;
+        }
+
+        /* Fetch the UTC time corresponding to this timestamp.
+         * Will return a UTC with valid=false if we don't know,
+         * will block up to half a second if we need to wait and see.
+         */
+        waveform_utc = time_capture_get_utc(waveform->_pps_timestamp);
+
+        /* If we don't currently have valid UTC time, discard this reading.
+         * In theory we could try and work it out later, but it's not worth
+         * it - we expect to just always have valid UTC except at startup.
+         */
+        if(waveform_utc.valid == false) {
+            /*chSysHalt("W2");*/
+            palSetLine(LINE_LED_RED);
+            chPoolFree(&wave_queue_pool, waveform);
+            continue;
+        } else {
+            palClearLine(LINE_LED_RED);
+        }
+
+        /* Copy valid UTC time into this waveform */
+        waveform->utc_year = waveform_utc.year;
+        waveform->utc_month = waveform_utc.month;
+        waveform->utc_day = waveform_utc.day;
+        waveform->utc_hour = waveform_utc.hour;
+        waveform->utc_minute = waveform_utc.minute;
+        waveform->utc_second = waveform_utc.second;
+
+        /* Submit that waveform to the SD card heap */
+        microsd_log(TAG_MEASUREMENT_WAVE,
+                    sizeof(struct mains_waveform), waveform);
+
+        /* Remove that waveform from the memory pool */
+        chPoolFree(&wave_queue_pool, waveform);
+    }
+}
+
+/* Mains bias reading thread.
+ * Just reads the mains bias on a regular basis, so that the waveform
+ * reading can be properly zeroed.
+ */
+static THD_WORKING_AREA(mains_bias_thd_wa, 128);
+static THD_FUNCTION(mains_bias_thd, arg)
+{
+    (void)arg;
 
     static const ADCConversionGroup adc2_grp = {
         .circular = false,
@@ -87,15 +378,139 @@ static adcsample_t measurements_read_mains_bias()
         .sqr3 = ADC_SQR3_SQ1_N(ADC_CHANNEL_IN13),
     };
 
-    msg_t rv = adcConvert(&ADCD2, &adc2_grp, &result, 1);
+    while(true) {
+        adcsample_t reading;
+        msg_t rv = adcConvert(&ADCD2, &adc2_grp, &reading, 1);
 
-    if(rv != MSG_OK) {
-        measurements_error("reading mains bias");
+        if(rv != MSG_OK) {
+            measurements_error("error reading mains bias");
+        }
+
+        mains_bias = reading;
+
+        chThdSleepMilliseconds(100);
+    }
+}
+/*****************************************************************************/
+
+
+/******************************************************** CALLBACK FUNCTIONS */
+static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
+{
+    (void)adcp;
+    struct mains_waveform *waveform;
+
+    /* Capture current ticks since last PPS, as early as possible */
+    gptcnt_t pps_timestamp = GPTD2.tim->CCR[1];
+    uint32_t delta_ticks = (GPTD2.tim->CNT) - pps_timestamp;
+
+    /* Check buffers are the right length */
+    chDbgAssert(n == MAINS_WAVE_BUFLEN/2,
+                "Buffer incorrect length");
+    chDbgAssert(n/4 == sizeof(waveform->waveform)/sizeof(waveform->waveform[0]),
+                "Buffer incorrect size for struct mains_waveform");
+
+    /* Allocate memory in the queue pool for this waveform buffer */
+    chSysLockFromISR();
+    waveform = chPoolAllocI(&wave_queue_pool);
+    chSysUnlockFromISR();
+    if(waveform == NULL) {
+        return;
     }
 
-    return result;
+    /* Grab a copy of the mains bias so it doesn't change inside this buffer */
+    int32_t _mains_bias = (int32_t)mains_bias;
+
+    /* Subsample the waveform (we run higher speed/res for good RMS accuracy,
+     * but don't want that much data on the server really).
+     */
+    size_t i;
+    for(i=0; i<n/4; i++) {
+        int8_t samp = ((int32_t)buf[i*4] - _mains_bias) >> 4;
+        waveform->waveform[i] = samp;
+    }
+
+    /* Save the nanoseconds-since-PPS for the end-of-buffer sample */
+    waveform->nanoseconds = delta_ticks * NS_PER_TICK;
+
+    /* Save the current PPS timestamp for later reconstruction of UTC */
+    waveform->_pps_timestamp = pps_timestamp;
+
+    /* Let the processing thread know about this buffer */
+    chSysLockFromISR();
+    msg_t rv = chMBPostI(&wave_queue_mbox, (intptr_t)waveform);
+    if(rv != MSG_OK) {
+        chPoolFreeI(&wave_queue_pool, waveform);
+    }
+    chSysUnlockFromISR();
 }
 
+/* Handle TIM2 input capture events */
+static void measurements_gpt2_cb(GPTDriver* gptd)
+{
+    (void)gptd;
+
+    /* Amazingly, ChibiOS sets SR to 0, so there's no way to tell which
+     * channel caused this interrupt to fire. So we'll do this stupid thing.
+     */
+    static uint32_t prev_ccr1 = 0, prev_ccr2 = 0;
+
+    /* Handle PPS */
+    if(GPTD2.tim->CCR[1] != prev_ccr2) {
+        prev_ccr2 = GPTD2.tim->CCR[1];
+        measurements_handle_pps();
+    }
+
+    /* Handle mains zero crossing */
+    if(GPTD2.tim->CCR[0] != prev_ccr1) {
+        prev_ccr1 = GPTD2.tim->CCR[0];
+        measurements_handle_zc();
+    }
+}
+
+static void measurements_handle_zc()
+{
+    /* Grab relevant timestamps */
+    struct mains_cycle_measurement *cycle;
+    gptcnt_t zc_ts = GPTD2.tim->CCR[0];
+    gptcnt_t pps_ts = GPTD2.tim->CCR[1];
+    gptcnt_t adc_ts = GPTD9.tim->CNT;
+
+    /* Allocate memory in the queue pool for them */
+    chSysLockFromISR();
+    cycle = chPoolAllocI(&cycle_queue_pool);
+    if(cycle == NULL) {
+        chSysUnlockFromISR();
+        return;
+    }
+
+    /* Save them to the queue pool */
+    cycle->zc_timestamp = zc_ts;
+    cycle->adc_timestamp = adc_ts;
+    cycle->pps_timestamp = pps_ts;
+
+    /* Let the queue processor know about them */
+    msg_t rv = chMBPostI(&cycle_queue_mbox, (intptr_t)cycle);
+    if(rv != MSG_OK) {
+        chPoolFreeI(&cycle_queue_pool, cycle);
+    }
+    chSysUnlockFromISR();
+}
+
+static void measurements_handle_pps()
+{
+    /* Save the captured timer count at the PPS moment. */
+    time_capture_pps_timestamp = GPTD2.tim->CCR[1];
+
+    /* Signal new timestamp the time capture thread. */
+    chSysLockFromISR();
+    chBSemSignalI(&time_capture_pps_bs);
+    chSysUnlockFromISR();
+}
+/*****************************************************************************/
+
+
+/************************************************************ INIT FUNCTIONS */
 static void measurements_timers_init()
 {
     /* Configure GPT2 to precisely time the GPS PPS and the mains
@@ -122,7 +537,7 @@ static void measurements_timers_init()
      * resetting at the same period as the ADC buffer size.
      */
     static const GPTConfig gpt9_cfg = {
-        .frequency = 200000000 /* to get a prescaler of 0 */,
+        .frequency = STM32_TIMCLK2, /* to get a prescaler of 0 */
         .callback = NULL,
         .cr2 = 0,
         .dier = 0,
@@ -132,13 +547,13 @@ static void measurements_timers_init()
     GPTD9.tim->SMCR =   STM32_TIM_SMCR_TS(1) | STM32_TIM_SMCR_SMS(7);
     gptStartContinuous(&GPTD9, MAINS_WAVE_BUFLEN);
 
-    /* Configure GPT3 for 1MHz clock,
-     * generating TRGO on update at 50kHz to clock TIM9 (counting),
-     * generating CC4 also at 50kHz to clock ADC1.
+    /* Configure GPT3 for 100kHz clock,
+     * generating TRGO on update at 4kHz to clock TIM9 (counting),
+     * generating CC4 also at 4kHz to clock ADC1.
      * Note ADC1 will begin sampling after this timer is started.
      */
     static const GPTConfig gpt3_cfg = {
-        .frequency = 1000000,
+        .frequency = 100000,
         .callback = NULL,
         .cr2 = STM32_TIM_CR2_MMS(2),
         .dier = 0,
@@ -147,8 +562,7 @@ static void measurements_timers_init()
     GPTD3.tim->CCR[3] = 1;
     GPTD3.tim->CCER = STM32_TIM_CCER_CC4E;
     GPTD3.tim->CCMR2 = STM32_TIM_CCMR2_OC4M(6);
-    gptStartContinuous(&GPTD3, 19);
-
+    gptStartContinuous(&GPTD3, 24);
 }
 
 static void measurements_adcs_init()
@@ -177,309 +591,36 @@ static void measurements_adcs_init()
     adcStartConversion(&ADCD1, &adc1_grp, mains_wave_buf, MAINS_WAVE_BUFLEN);
 }
 
-static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
+void measurements_init()
 {
-    (void)adcp;
 
-    struct mains_waveform waveform;
+    /* Initialise the time capture buffer */
+    chMtxObjectInit(&time_capture_buf_mtx);
+    chBSemObjectInit(&time_capture_pps_bs, false);
 
-    /* Get current timestamp and most recent PPS timestamp */
-    uint64_t delta_ticks    = (GPTD2.tim->CNT) - prev_pps.timestamp;
-    uint64_t delta_sub_ms   = (delta_ticks<<32) / (TIMER_FREQ / 1000);
-    waveform.utc_tow_sub_ms = prev_pps.utc_tow_sub_ms + delta_sub_ms;
-    waveform.utc_week       = prev_pps.utc_week;
-
-    /* Check buffers are the right length */
-    chDbgAssert(n == MAINS_WAVE_BUFLEN/2,
-                "Buffer incorrect length");
-    chDbgAssert(n/10 == sizeof(waveform.waveform)/sizeof(int16_t),
-                "Buffer too long for struct mains_waveform");
-
-    /* Grab a copy of the mains bias so it doesn't change inside this buffer */
-    adcsample_t _mains_bias = mains_bias;
-
-    /* Subsample the waveform (we run high speed for good RMS accuracy,
-     * but don't want that much data on the server really
-     */
-    size_t i;
-    for(i=0; i<n/10; i++) {
-        waveform.waveform[i] = (int16_t)buf[i*10] - _mains_bias;
-    }
-
-    wave_queue_submit(&waveform);
-}
-
-static void measurements_handle_zc()
-{
-    /* Grab timestamps corresponding to the current ZC */
-    uint32_t zc_ts = GPTD2.tim->CCR[0];
-    uint32_t adc_ts = GPTD9.tim->CNT;
-    uint32_t pps_ts = prev_pps.timestamp;
-
-    /* Bodge filter. Quit early if we're within 5ms of the last interrupt,
-     * since it won't be a real transition.
-     */
-    if(prev_mains_cycle.timestamps_valid &&
-       zc_ts - prev_mains_cycle.zc_timestamp < (TIMER_FREQ/200))
-    {
-        return;
-    }
-
-    /* Quit early if we don't have a valid previous measurement,
-     * or if we don't currently have UTC available.
-     * The previous measurement will sort itself out next ZC,
-     * and UTC valid will sort itself out in the background.
-     */
-    if(!prev_mains_cycle.timestamps_valid   ||
-       !prev_pps.utc_valid                  ||
-       pps_ts != prev_pps.timestamp)
-    {
-        prev_mains_cycle.adc_timestamp = adc_ts;
-        prev_mains_cycle.zc_timestamp = zc_ts;
-        prev_mains_cycle.timestamps_valid = true;
-        prev_mains_cycle.zc_utc_available = false;
-        /* TODO warning */
-        return;
-    }
-
-    /* Find the UTC time corresponding to the current ZC */
-    uint64_t delta_ticks   = zc_ts - prev_pps.timestamp;
-    uint64_t delta_sub_ms  = (delta_ticks<<32) / (TIMER_FREQ / 1000);
-    uint64_t zc_utc_tow_sub_ms = prev_pps.utc_tow_sub_ms + delta_sub_ms;
-
-    mains_cycle_out.utc_week = prev_mains_cycle.zc_utc_week;
-    mains_cycle_out.utc_tow_sub_ms = prev_mains_cycle.zc_utc_tow_sub_ms;
-
-    /* Compute the frequency of the previous waveform. */
-    /* TODO: Consider checking for timer overflow beyond two 22s periods,
-     * possibly by computing period just based on the UTC timestamps.
-     */
-    double period = zc_ts - prev_mains_cycle.zc_timestamp;
-    mains_cycle_out.frequency = (double)TIMER_FREQ / period;
-
-    /* Compute the RMS voltage of the previous waveform. */
-    /* TODO: This wraps around much sooner than the timer will, in the event
-     * of low-frequency cycles. Detect and handle gracefully.
-     */
-/* TODO this crashes, waveform_len ends up ginormous, fix me */
-/* it's because waveform_len needs to be mod 4096.. */
-#if 0
-    size_t i;
-    int64_t sum_squares = 0;
-    size_t waveform_len = adc_ts - prev_mains_cycle.adc_timestamp;
-    size_t start_idx = prev_mains_cycle.adc_timestamp;
-    uint16_t _mains_bias = mains_bias;
-    if(start_idx + waveform_len < MAINS_WAVE_BUFLEN) {
-        for(i=0; i<waveform_len; i++) {
-            int16_t sample = mains_wave_buf[start_idx + i] - _mains_bias;
-            sum_squares += sample * sample;
-        }
-    } else {
-        for(i=0; i<MAINS_WAVE_BUFLEN - start_idx; i++) {
-            int16_t sample = mains_wave_buf[start_idx + i] - _mains_bias;
-            sum_squares += sample * sample;
-        }
-        for(i=0; i<waveform_len - MAINS_WAVE_BUFLEN; i++) {
-            int16_t sample = mains_wave_buf[i] - _mains_bias;
-            sum_squares += sample * sample;
-        }
-    }
-    mains_cycle_out.rms = sqrt((double)sum_squares / (double)waveform_len);
-#endif
-    mains_cycle_out.rms = 0;
-
-    cycle_queue_submit(&mains_cycle_out);
-
-    /* Save the current waveform details for use as the previous waveform
-     * next time around.
-     */
-    prev_mains_cycle.adc_timestamp = adc_ts;
-    prev_mains_cycle.zc_timestamp = zc_ts;
-    prev_mains_cycle.timestamps_valid = true;
-
-    prev_mains_cycle.zc_utc_week = prev_pps.utc_week;
-    prev_mains_cycle.zc_utc_tow_sub_ms = zc_utc_tow_sub_ms;
-    prev_mains_cycle.zc_utc_available = true;
-}
-
-static void measurements_handle_pps()
-{
-    /* Save the timer counter, and if there has been a valid timepulse
-     * message, save the UTC moment that corresponds to this timepulse.
-     *
-     * Note that in theory this should be an atomic read but it's a pain
-     * to lock from inside the ISR context and the uBlox sends the
-     * timepulse messages well before the actual pulse,
-     * so we shouldn't ever be doing this at the same time...
-     */
-    prev_pps.timestamp = GPTD2.tim->CCR[1];
-    if(ublox_upcoming_tp_time.valid) {
-        prev_pps.utc_valid = true;
-        prev_pps.utc_tow_sub_ms = ublox_upcoming_tp_time.tow_sub_ms;
-        prev_pps.utc_week = ublox_upcoming_tp_time.week;
-
-        /* We "consume" the PPS TP message validity here.
-         * No other pulse should use this UTC instant.
-         */
-        ublox_upcoming_tp_time.valid = false;
-    } else {
-        prev_pps.utc_valid = false;
-        prev_pps.utc_tow_sub_ms = 0;
-        prev_pps.utc_week = 0;
-    }
-}
-
-/* Handle TIM2 input capture events */
-static void measurements_gpt2_cb(GPTDriver* gptd)
-{
-    (void)gptd;
-
-    /* Amazingly, ChibiOS sets SR to 0, so there's no way to tell which
-     * channel caused this interrupt to fire. So we'll do this stupid thing.
-     */
-    static uint32_t prev_ccr1 = 0, prev_ccr2 = 0;
-
-    /* Handle PPS */
-    if(GPTD2.tim->CCR[1] != prev_ccr2) {
-        prev_ccr2 = GPTD2.tim->CCR[1];
-        measurements_handle_pps();
-        GPTD2.tim->SR &= ~STM32_TIM_SR_CC2IF;
-    }
-
-    /* Handle mains zero crossing */
-    if(GPTD2.tim->CCR[0] != prev_ccr1) {
-        prev_ccr1 = GPTD2.tim->CCR[0];
-        measurements_handle_zc();
-        GPTD2.tim->SR &= ~STM32_TIM_SR_CC1IF;
-    }
-
-}
-
-static THD_WORKING_AREA(mains_bias_thd_wa, 128);
-static THD_FUNCTION(mains_bias_thd, arg)
-{
-    (void)arg;
-    while(true) {
-        mains_bias = measurements_read_mains_bias();
-        chThdSleepMilliseconds(100);
-    }
-}
-
-#define CYCLE_QUEUE_SIZE (64)
-static memory_pool_t cycle_queue_pool;
-static uint8_t cycle_queue_pool_buf[CYCLE_QUEUE_SIZE*sizeof(struct mains_cycle)]
-    __attribute__((aligned(sizeof(stkalign_t))))
-    __attribute__((section(".MAIN_STACK_RAM")));
-static mailbox_t cycle_queue_mbox;
-static msg_t cycle_queue_mbox_buf[CYCLE_QUEUE_SIZE]
-    __attribute__((aligned(sizeof(stkalign_t))))
-    __attribute__((section(".MAIN_STACK_RAM")));
-static THD_WORKING_AREA(cycle_queue_thd_wa, 256);
-static THD_FUNCTION(cycle_queue_thd, arg)
-{
-    (void)arg;
-    chPoolObjectInit(&cycle_queue_pool, sizeof(struct mains_cycle), NULL);
+    /* Initialise the cycle memory pool and mailbox */
+    chPoolObjectInit(&cycle_queue_pool,
+                     sizeof(struct mains_cycle_measurement), NULL);
     chPoolLoadArray(&cycle_queue_pool, cycle_queue_pool_buf, CYCLE_QUEUE_SIZE);
     chMBObjectInit(&cycle_queue_mbox, cycle_queue_mbox_buf, CYCLE_QUEUE_SIZE);
 
-    msg_t mbox_r;
-    void* mbox_p;
-
-    while(true) {
-        mbox_r = chMBFetch(&cycle_queue_mbox, (msg_t*)&mbox_p, TIME_INFINITE);
-        if(mbox_r != MSG_OK || mbox_p == 0) {
-            continue;
-        }
-
-        microsd_log(TAG_MEASUREMENT_ZC, sizeof(struct mains_cycle), mbox_p);
-
-        chPoolFree(&cycle_queue_pool, mbox_p);
-    }
-}
-
-static void cycle_queue_submit(struct mains_cycle *cycle)
-{
-    chSysLockFromISR();
-    void* msg = chPoolAllocI(&cycle_queue_pool);
-    if(msg == NULL) {
-        return;
-    }
-    chSysUnlockFromISR();
-
-    memcpy(msg, cycle, sizeof(struct mains_cycle));
-
-    chSysLockFromISR();
-    msg_t rv = chMBPostI(&cycle_queue_mbox, (intptr_t)msg);
-    if(rv != MSG_OK) {
-        chPoolFreeI(&cycle_queue_pool, msg);
-    }
-    chSysUnlockFromISR();
-}
-
-#define WAVE_QUEUE_SIZE (64)
-static memory_pool_t wave_queue_pool;
-static uint8_t wave_queue_pool_buf[WAVE_QUEUE_SIZE*sizeof(struct mains_waveform)]
-    __attribute__((aligned(sizeof(stkalign_t))))
-    __attribute__((section(".MAIN_STACK_RAM")));
-static mailbox_t wave_queue_mbox;
-static msg_t wave_queue_mbox_buf[WAVE_QUEUE_SIZE]
-    __attribute__((aligned(sizeof(stkalign_t))))
-    __attribute__((section(".MAIN_STACK_RAM")));
-static THD_WORKING_AREA(wave_queue_thd_wa, 256);
-static THD_FUNCTION(wave_queue_thd, arg)
-{
-    (void)arg;
+    /* Initialise the waveform memory pool and mailbox */
     chPoolObjectInit(&wave_queue_pool, sizeof(struct mains_waveform), NULL);
     chPoolLoadArray(&wave_queue_pool, wave_queue_pool_buf, WAVE_QUEUE_SIZE);
     chMBObjectInit(&wave_queue_mbox, wave_queue_mbox_buf, WAVE_QUEUE_SIZE);
 
-    msg_t mbox_r;
-    void* mbox_p;
-
-    while(true) {
-        mbox_r = chMBFetch(&wave_queue_mbox, (msg_t*)&mbox_p, TIME_INFINITE);
-        if(mbox_r != MSG_OK || mbox_p == 0) {
-            continue;
-        }
-
-        microsd_log(TAG_MEASUREMENT_WAVE, sizeof(struct mains_waveform), mbox_p);
-
-        chPoolFree(&wave_queue_pool, mbox_p);
-    }
-}
-
-static void wave_queue_submit(struct mains_waveform *wave)
-{
-    chSysLockFromISR();
-    void* msg = chPoolAllocI(&wave_queue_pool);
-    if(msg == NULL) {
-        return;
-    }
-    chSysUnlockFromISR();
-
-    memcpy(msg, wave, sizeof(struct mains_waveform));
-
-    chSysLockFromISR();
-    msg_t rv = chMBPostI(&wave_queue_mbox, (intptr_t)msg);
-    if(rv != MSG_OK) {
-        chPoolFreeI(&wave_queue_pool, msg);
-    }
-    chSysUnlockFromISR();
-}
-
-void measurements_init()
-{
-    /* Ensure we don't try and compute deltas on the first measurement.. */
-    prev_mains_cycle.timestamps_valid = false;
-
-    /* Ensure we don't start reporting times until we know them. */
-    prev_pps.utc_valid = false;
-
-    /* Start threads to submit items onwards */
+    /* Start threads to process queues and submit items onwards */
+    chThdCreateStatic(time_capture_thd_wa, sizeof(time_capture_thd_wa),
+                      NORMALPRIO+10, time_capture_thd, NULL);
     chThdCreateStatic(cycle_queue_thd_wa, sizeof(cycle_queue_thd_wa),
-                      NORMALPRIO, cycle_queue_thd, NULL);
+                      NORMALPRIO+9, cycle_queue_thd, NULL);
     chThdCreateStatic(wave_queue_thd_wa, sizeof(wave_queue_thd_wa),
-                      NORMALPRIO, wave_queue_thd, NULL);
+                      NORMALPRIO+8, wave_queue_thd, NULL);
+
+    /* Wait for a PVT packet to ensure the threads are ready to process
+     * their queues before starting measurements.
+     */
+    chBSemWait(&ublox_last_utc_bs);
 
     /* Start up the ADCs */
     measurements_adcs_init();
@@ -491,3 +632,4 @@ void measurements_init()
     chThdCreateStatic(mains_bias_thd_wa, sizeof(mains_bias_thd_wa),
                       NORMALPRIO, mains_bias_thd, NULL);
 }
+/*****************************************************************************/

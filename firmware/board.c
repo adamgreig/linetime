@@ -81,13 +81,21 @@ const PALConfig pal_default_config = {
  *          and before any other initialization.
  */
 void __early_init(void) {
-  /* Swap the SYSCLK to HSI */
-  RCC->CFGR &= ~RCC_CFGR_SW;
-  /* Wait for HSI to be the system clock */
-  while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI);
+    /* Swap to HSI as system clock */
+    RCC->CFGR &= ~(RCC_CFGR_SW);
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI);
 
-  /* Perform ChibiOS clock initialisation */
-  stm32_clock_init();
+    /* Reset the uBlox, causing HSE clock to stop */
+    GPIOD->ODR &= ~(1<<4);
+
+    /* Turn off HSE and PLL */
+    RCC->CR &= ~(RCC_CR_HSEON | RCC_CR_HSEBYP | RCC_CR_PLLON);
+
+    /* Turn off overdrive */
+    PWR->CR1 &= ~(PWR_CR1_ODEN | PWR_CR1_ODSWEN);
+
+    /* Perform ChibiOS clock initialisation */
+    stm32_clock_init();
 }
 
 #if HAL_USE_SDC || defined(__DOXYGEN__)

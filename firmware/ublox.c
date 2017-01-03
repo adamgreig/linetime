@@ -11,6 +11,25 @@
 #include "ch.h"
 #include "hal.h"
 
+static uint16_t ublox_fletcher_8(uint16_t chk, uint8_t *buf, uint8_t n);
+static void ublox_checksum(uint8_t *buf);
+static bool ublox_transmit(uint8_t *buf);
+static enum ublox_result ublox_state_machine(void);
+static enum ublox_result ublox_process_message(
+    uint8_t class, uint8_t id, uint16_t length, const uint8_t* payload);
+static bool ublox_expect(enum ublox_result expected, const char* errmsg);
+static bool ublox_tx_expect(
+    uint8_t* buf, enum ublox_result exp, const char* err);
+static bool ublox_configure(void);
+static bool ublox_configure_prt(void);
+static bool ublox_configure_nav5(void);
+static bool ublox_configure_rate(void);
+static bool ublox_configure_gnss(void);
+static bool ublox_configure_sbas(void);
+static bool ublox_configure_tp5(void);
+static bool ublox_configure_msg(void);
+static void ublox_error(const char* err);
+
 /* UBX sync bytes */
 #define UBX_SYNC1 0xB5
 #define UBX_SYNC2 0x62
@@ -44,7 +63,10 @@
 #define UBX_TIM_TP      0x01
 
 static SerialDriver* ublox_seriald;
-struct ublox_tp_time_t ublox_upcoming_tp_time;
+
+/* Used to signal new UTC values */
+binary_semaphore_t ublox_last_utc_bs;
+struct ublox_utc ublox_last_utc;
 
 /* UBX Decoding State Machine States */
 typedef enum {
@@ -319,6 +341,18 @@ typedef struct __attribute__((packed)) {
     uint8_t ck_a, ck_b;
 } ubx_nav_pvt_t;
 
+/* Cut-down storage for just the interesting parts of a PVT */
+struct ublox_pvt {
+    uint32_t i_tow;
+    uint16_t year;
+    uint8_t month, day, hour, minute, second;
+    uint8_t valid;
+    uint32_t t_acc;
+    int32_t nano;
+    uint8_t fix_type, flags, reserved1, num_sv;
+    int32_t lon, lat, height;
+} __attribute__((packed));
+
 /* UBX-NAV-TIMELS
  * Contains information about any upcoming leap seconds.
  */
@@ -409,23 +443,7 @@ enum ublox_result {
     UBLOX_ERROR
 };
 
-static uint16_t ublox_fletcher_8(uint16_t chk, uint8_t *buf, uint8_t n);
-static void ublox_checksum(uint8_t *buf);
-static bool ublox_transmit(uint8_t *buf);
-static enum ublox_result ublox_state_machine(void);
-static bool ublox_expect(enum ublox_result expected, const char* errmsg);
-static bool ublox_tx_expect(uint8_t* buf, enum ublox_result exp, const char* err);
-static bool ublox_configure(void);
-static bool ublox_configure_prt(void);
-static bool ublox_configure_nav5(void);
-static bool ublox_configure_rate(void);
-static bool ublox_configure_gnss(void);
-static bool ublox_configure_sbas(void);
-static bool ublox_configure_tp5(void);
-static bool ublox_configure_msg(void);
-static void ublox_error(const char* err);
-
-static SerialConfig serial_cfg = {
+static const SerialConfig serial_cfg = {
     .speed = 9600,
     .cr1 = 0,
     .cr2 = 0,
@@ -518,11 +536,6 @@ static enum ublox_result ublox_state_machine()
     static uint8_t ck_a, ck_b;
     static uint16_t ck;
 
-    ubx_cfg_nav5_t cfg_nav5;
-    ubx_nav_pvt_t nav_pvt;
-    ubx_nav_timels_t nav_timels;
-    ubx_tim_tp_t tim_tp;
-
     switch(state) {
         case STATE_IDLE:
             if(b == UBX_SYNC1)
@@ -582,7 +595,6 @@ static enum ublox_result ublox_state_machine()
             ck = ublox_fletcher_8(ck, (uint8_t*)&length, 2);
             ck = ublox_fletcher_8(ck, payload, length);
             if(ck_a != (ck&0xFF) || ck_b != (ck>>8)) {
-                ublox_error("rx checksum invalid");
                 state = STATE_IDLE;
                 rxbufidx = 0;
                 return UBLOX_BAD_CHECKSUM;
@@ -591,86 +603,7 @@ static enum ublox_result ublox_state_machine()
             state = STATE_IDLE;
             rxbufidx = 0;
 
-            switch(class) {
-                case UBX_ACK:
-                    if(id == UBX_ACK_ACK) {
-                        return UBLOX_ACK;
-                    } else if(id == UBX_ACK_NAK) {
-                        return UBLOX_NAK;
-                    } else {
-                        ublox_error("unknown ack msg");
-                        return UBLOX_UNHANDLED;
-                    }
-                    break;
-                case UBX_NAV:
-                    if(id == UBX_NAV_PVT) {
-                        memcpy(nav_pvt.payload, payload, length);
-                        microsd_log(TAG_GPS_PVT, length, payload);
-
-
-                        /* TODO: remove this later */
-                        /* Record the time from PVT instead because ARGH */
-                        ublox_upcoming_tp_time.week =
-                            (nav_pvt.month << 8) | (nav_pvt.day);
-                        ublox_upcoming_tp_time.tow_sub_ms =
-                            (uint64_t)nav_pvt.i_tow << 32;
-
-                        ublox_upcoming_tp_time.valid = nav_pvt.valid & 7;
-
-                        return UBLOX_NAV_PVT;
-                    } else if(id == UBX_NAV_TIMELS) {
-                        memcpy(nav_timels.payload, payload, length);
-                        return UBLOX_NAV_TIMELS;
-                    } else {
-                        ublox_error("unknown nav msg");
-                        return UBLOX_UNHANDLED;
-                    }
-                    break;
-                case UBX_TIM:
-                    if(id == UBX_TIM_TP) {
-                        memcpy(tim_tp.payload, payload, length);
-                        if(tim_tp.flags & UBX_TIM_TP_FLAGS_TIMEBASE_UTC &&
-                           tim_tp.flags & UBX_TIM_TP_FLAGS_UTC_AVAILABLE &&
-                           tim_tp.ref_info & UBX_TIM_TP_REF_INFO_UTC_STANDARD_USNO)
-                        {
-                            ublox_upcoming_tp_time.week = tim_tp.week;
-                            ublox_upcoming_tp_time.tow_sub_ms =
-                                ((uint64_t)tim_tp.tow_ms << 32)
-                                | tim_tp.tow_sub_ms;
-                            ublox_upcoming_tp_time.valid = true;
-                        } else {
-                            ublox_upcoming_tp_time.valid = false;
-                        }
-                        microsd_log(TAG_GPS_TP, length, payload);
-                        return UBLOX_TIM_TP;
-                    } else {
-                        ublox_error("unknown tim msg");
-                        return UBLOX_UNHANDLED;
-                    }
-                    break;
-                case UBX_CFG:
-                    if(id == UBX_CFG_NAV5) {
-                        memcpy(cfg_nav5.payload, payload, length);
-                        if(cfg_nav5.dyn_model !=
-                           UBX_CFG_NAV5_DYN_MODEL_STATIONARY)
-                        {
-                            ublox_error("received cfg_nav5 not stationary");
-                        }
-                        if(cfg_nav5.utc_standard !=
-                           UBX_CFG_NAV5_UTC_STANDARD_USNO)
-                        {
-                            ublox_error("received cfg_nav5 not USNO");
-                        }
-                        return UBLOX_CFG_NAV5;
-                    } else {
-                        ublox_error("unknown cfg msg");
-                        return UBLOX_UNHANDLED;
-                    }
-                    break;
-                default:
-                    break;
-            }
-            break;
+            return ublox_process_message(class, id, length, payload);
 
         default:
             state = STATE_IDLE;
@@ -681,6 +614,90 @@ static enum ublox_result ublox_state_machine()
     }
 
     return UBLOX_WAIT;
+}
+
+static enum ublox_result ublox_process_message(
+    uint8_t class, uint8_t id, uint16_t length, const uint8_t* payload)
+{
+    /* Keep track if we've stored/uploaded a valid PVT since boot */
+    static bool pvt_uploaded = false;
+
+    if(class == UBX_ACK) {
+            if(id == UBX_ACK_ACK) {
+                return UBLOX_ACK;
+            } else if(id == UBX_ACK_NAK) {
+                return UBLOX_NAK;
+            } else {
+                ublox_error("unknown ack msg");
+                return UBLOX_UNHANDLED;
+            }
+    } else if(class == UBX_NAV) {
+        if(id == UBX_NAV_PVT) {
+            struct ublox_pvt pvt;
+            memcpy(&pvt, payload, sizeof(pvt));
+
+            ublox_last_utc.year = (pvt.year - 2000);
+            ublox_last_utc.month = pvt.month;
+            ublox_last_utc.day = pvt.day;
+            ublox_last_utc.hour = pvt.hour;
+            ublox_last_utc.minute = pvt.minute;
+            ublox_last_utc.second = pvt.second;
+            ublox_last_utc.valid = (pvt.valid & 0x07) == 0x07;
+
+            /* TODO remove for production */
+            ublox_last_utc.valid = (pvt.valid & 0x03) == 0x03;
+
+            /* Notify any listeners that we have a new valid time */
+            if(ublox_last_utc.valid) {
+                chBSemSignal(&ublox_last_utc_bs);
+            }
+
+            /* Upload the first valid PVT, and then upload
+             * one per hour thereafter.
+             */
+            if(pvt.fix_type == 3 &&
+               (!pvt_uploaded || (pvt.minute == 0 && pvt.second == 0)))
+            {
+                microsd_log(TAG_GPS_PVT, sizeof(pvt), &pvt);
+                pvt_uploaded = true;
+            }
+
+            return UBLOX_NAV_PVT;
+        } else if(id == UBX_NAV_TIMELS) {
+            return UBLOX_NAV_TIMELS;
+        } else {
+            ublox_error("unknown nav msg");
+            return UBLOX_UNHANDLED;
+        }
+    } else if(class == UBX_TIM) {
+        if(id == UBX_TIM_TP) {
+            return UBLOX_TIM_TP;
+        } else {
+            ublox_error("unknown tim msg");
+            return UBLOX_UNHANDLED;
+        }
+    } else if(class == UBX_CFG) {
+        if(id == UBX_CFG_NAV5) {
+            ubx_cfg_nav5_t cfg_nav5;
+            memcpy(cfg_nav5.payload, payload, length);
+            if(cfg_nav5.dyn_model !=
+               UBX_CFG_NAV5_DYN_MODEL_STATIONARY)
+            {
+                ublox_error("received cfg_nav5 not stationary");
+            }
+            if(cfg_nav5.utc_standard !=
+               UBX_CFG_NAV5_UTC_STANDARD_USNO)
+            {
+                ublox_error("received cfg_nav5 not USNO");
+            }
+            return UBLOX_CFG_NAV5;
+        } else {
+            ublox_error("unknown cfg msg");
+            return UBLOX_UNHANDLED;
+        }
+    } else {
+        return UBLOX_UNHANDLED;
+    }
 }
 
 static bool ublox_expect(enum ublox_result expected, const char* errmsg)
@@ -698,7 +715,8 @@ static bool ublox_expect(enum ublox_result expected, const char* errmsg)
     return true;
 }
 
-static bool ublox_tx_expect(uint8_t* buf, enum ublox_result exp, const char* err)
+static bool ublox_tx_expect(
+    uint8_t* buf, enum ublox_result exp, const char* err)
 {
     if(!ublox_transmit(buf)) {
         return false;
@@ -915,7 +933,7 @@ static bool ublox_configure_tp5(void)
     tp5.tp_idx               = 1;
     tp5.version              = 0;
     tp5.ant_cable_delay      = 15;
-    tp5.freq_period          = 1;  /* TODO: DEVELOPMENT: s/1/0 later */
+    tp5.freq_period          = 0;
     tp5.pulse_len_ratio      = 10000;
     tp5.freq_period_lock     = 1;
     tp5.pulse_len_ratio_lock = 10000;
@@ -1002,8 +1020,9 @@ void ublox_init(SerialDriver* seriald) {
     /* Store a reference to the serial driver to use */
     ublox_seriald = seriald;
 
-    /* Ensure the time is not yet valid */
-    ublox_upcoming_tp_time.valid = false;
+    /* Set up the UTC notifying stuff */
+    ublox_last_utc.valid = false;
+    chBSemObjectInit(&ublox_last_utc_bs, false);
 
     /* Start up the ublox processing thread */
     chThdCreateStatic(ublox_thd_wa, sizeof(ublox_thd_wa), NORMALPRIO,

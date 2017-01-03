@@ -15,17 +15,16 @@ static void microsd_card_deinit(void);
 /* Heap object and buffer (used to store pending items) */
 static memory_heap_t microsd_heap;
 static uint8_t microsd_heap_buf[16*1024]
-    __attribute__((aligned(sizeof(stkalign_t))))
-    __attribute__((section(".MAIN_STACK_RAM")));
+    __attribute__((aligned(sizeof(stkalign_t))));
 
 /* Mailbox object and buffer */
 static mailbox_t microsd_mailbox;
 static msg_t microsd_mailbox_buf[256]
-    __attribute__((aligned(sizeof(stkalign_t))))
-    __attribute__((section(".MAIN_STACK_RAM")));
+    __attribute__((aligned(sizeof(stkalign_t))));
 
 /* MicroSD write buffer */
 static uint8_t microsd_card_buf[16*1024]
+    __attribute__((section(".data")))
     __attribute__((aligned(sizeof(stkalign_t))));
 
 static bool microsd_card_init(FATFS* fs)
