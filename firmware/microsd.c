@@ -24,7 +24,7 @@ static msg_t microsd_mailbox_buf[256]
 
 /* MicroSD write buffer */
 static uint8_t microsd_card_buf[16*1024]
-    __attribute__((section(".data")))
+    __attribute__((section(".sram2")))
     __attribute__((aligned(sizeof(stkalign_t))));
 
 static bool microsd_card_init(FATFS* fs)

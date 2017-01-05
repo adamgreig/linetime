@@ -54,6 +54,9 @@ static volatile adcsample_t mains_bias;
 /* Store the DMA'd ADC samples from the mains waveform.
  * Note you have to update the size of the buffer in struct mains_waveform
  * to 1/8 * MAINS_WAVE_BUFLEN if you change it here.
+ * Don't place this into .data because then it would be cached, but we need
+ * to access it in-between DMA interrupts when we find the RMS value of a
+ * mains cycle.
  */
 #define MAINS_WAVE_BUFLEN (1024)
 static adcsample_t mains_wave_buf[MAINS_WAVE_BUFLEN];

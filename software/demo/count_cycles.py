@@ -8,12 +8,14 @@ tag_gps_pvt = ord('P')
 
 cycles_31st = 0
 cycles_1st = 0
+cycles_2nd = 0
 freqs_31st = []
 freqs_1st = []
+freqs_2nd = []
 
 
 def process_zc(idx):
-    global cycles_31st, cycles_1st
+    global cycles_31st, cycles_1st, cycles_2nd
     tag, magic1, magic2, magic3 = contents[idx:idx+4]
     if tag != tag_measurement_zc:
         print("invalid zc tag")
@@ -29,9 +31,12 @@ def process_zc(idx):
     if tow >= 518416 or tow < 17:
         cycles_31st += 1
         freqs_31st.append(freq)
-    if tow >= 17 and tow < 86417:
+    elif tow >= 17 and tow < (17 + 86400):
         cycles_1st += 1
         freqs_1st.append(freq)
+    elif tow >= 86417 and tow < (86417+86400):
+        cycles_2nd += 1
+        freqs_2nd.append(freq)
     return length+8
     print("ZC month={} day={} tow={} freq={} rms={}"
           .format(month, day, tow, freq, rms))
@@ -103,13 +108,15 @@ while idx < len(contents):
 import numpy as np
 print("cycles on 31st:", cycles_31st)
 print("cycles on 1st:", cycles_1st)
+print("cycles on 2nd:", cycles_2nd)
 print("avg freq on 31st:", np.mean(freqs_31st))
 print("avg freq on 1st:", np.mean(freqs_1st))
-print("avg freq, both days:", np.mean(freqs_31st + freqs_1st))
+print("avg freq on 2nd:", np.mean(freqs_2nd))
+print("avg freq, all days:", np.mean(freqs_31st + freqs_1st + freqs_2nd))
 
-freqs = np.array(freqs_31st + freqs_1st)
-freqs = freqs[:(freqs.size//50)*50]
-freqs = freqs.reshape((-1, 50)).mean(axis=1)
-import matplotlib.pyplot as plt
-plt.plot(freqs)
-plt.show()
+#freqs = np.array(freqs_31st + freqs_1st)
+#freqs = freqs[:(freqs.size//50)*50]
+#freqs = freqs.reshape((-1, 50)).mean(axis=1)
+#import matplotlib.pyplot as plt
+#plt.plot(freqs)
+#plt.show()

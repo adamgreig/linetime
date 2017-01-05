@@ -5,11 +5,15 @@
 #include "cs2100.h"
 #include "measurements.h"
 #include "microsd.h"
+#include "lcd.h"
+#include "speaker.h"
 
 int main(void)
 {
     halInit();
     chSysInit();
+
+    speaker_init();
 
     /* Bring up the ublox, including the 1MHz TIMEPULSE output */
     ublox_init(&SD2);
@@ -20,9 +24,12 @@ int main(void)
     /* Swap the PLL to run off the 26MHz clock */
     cs2100_set_pll();
 
+    /* Turn on the screen and speaker */
+    lcd_init();
+    speaker_init();
+
     /* Start up the µSD card, ready for logging */
     microsd_init();
-    chThdSleepMilliseconds(2000);
 
     /* Wait until GPS lock before starting mains measurements */
     while(!ublox_last_utc.valid) {

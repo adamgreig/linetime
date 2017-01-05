@@ -55,11 +55,9 @@
 #define BOARD_PHY_ADDRESS              0x00
 #define BOARD_PHY_RMII
 #define BOARD_PHY_RESET() {                                                   \
-    palSetLine(LINE_LED_YLW);                                                 \
     palClearLine(LINE_PHY_RST);                                               \
     for(volatile uint32_t i=0; i<1920000; i++) asm("nop");                    \
     palSetLine(LINE_PHY_RST);                                                 \
-    palClearLine(LINE_LED_YLW);                                               \
 }
 
 

@@ -1,22 +1,20 @@
 # Firmware Outline/To-Do
 
 * Technical Debt
-    * Remove firmware 18 GPS stuff like TIMELS
-    * Remove all mention of TIM-TP. It wasn't meant to be. Alas.
-    * Correctly use NAV-PVT and perhaps TIM-TIMEUTC to determine the
-      top of the coming PPS pulse
-    * Consider therefore moving away from week+tow representation
-    * For example, use raw TIM2 CNT plus a 32 bit overflow counter for 64bit
-      "time since boot" + log the corresponding PVT times
     * Tidy up queue system and split out from microSD so ethernet can use it
-    * Fix mains RMS measurements
+    * Timestamps for waves are currently the final entry but ideally would be
+      the first entry - if you use the last waveform's timestamp for the next
+      waveform you get this property, basically..
+    * The ADC1 buffer is quite short, so probably a cycle that needs its RMS
+      computing will find that after waiting for valid UTC the buffer now
+      contains something quite different.
+      Could make the buffer longer and either make the waveform structs longer
+      too, or generate many of them, or instead could find the RMS inside the
+      ISR (ew).
 
 * Ethernet:
     * Read MAC address from ROM
     * LWIP to send TCP packets
-    * Send the continuous ADC buffer every half-full interrupt,
-      perhaps subsampled? and perhaps with a UTC timestamp for the start?
-    * Send each cycle event (rms, freq, timestamp)
     * HTTP to u-Blox AssistNow Online and send to ublox because hey why not
 
 * Battery:
