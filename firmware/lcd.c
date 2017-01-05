@@ -9,7 +9,7 @@ void lcd_backlight_init()
 {
     static const PWMConfig pwm_cfg = {
         .frequency = 100000,
-        .period = 255,
+        .period = 100,
         .callback = NULL,
         .channels = {
             {
@@ -32,7 +32,7 @@ void lcd_backlight_init()
     };
 
     pwmStart(&PWMD4, &pwm_cfg);
-    lcd_backlight_set(100);
+    lcd_backlight_set(50);
 }
 
 void lcd_backlight_set(uint8_t brightness)

@@ -134,6 +134,17 @@ SECTIONS
         . = ALIGN(4);
         __sram2_end__ = .;
     } > ram2
+
+    /* SRAM1, noload */
+    .sram1 (NOLOAD) : ALIGN(4)
+    {
+        __sram1_base__ = .;
+        *(.sram1)
+        *(.sram1.*)
+        *(.bss.__sram1_*)
+        . = ALIGN(4);
+        __sram1_end__ = .;
+    } > ram1
 }
 
 /* Code rules inclusion.*/

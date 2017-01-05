@@ -4,3 +4,6 @@
 [submodule "firmware/ChibiOS"]
 	path = firmware/ChibiOS
 	url = https://github.com/chibios/chibios.git
+[submodule "firmware/uGFX"]
+	path = firmware/uGFX
+	url = https://git.ugfx.io/uGFX/uGFX.git
