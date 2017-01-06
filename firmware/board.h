@@ -784,7 +784,7 @@
                                         PIN_PUPD_PULLUP(GPIOD_PIN9) | \
                                         PIN_PUPD_PULLUP(GPIOD_LCD_B3) | \
                                         PIN_PUPD_PULLUP(GPIOD_PIN11) | \
-                                        PIN_PUPD_PULLUP(GPIOD_LCD_BACKLIGHT) | \
+                                        PIN_PUPD_FLOATING(GPIOD_LCD_BACKLIGHT) | \
                                         PIN_PUPD_PULLUP(GPIOD_PIN13) | \
                                         PIN_PUPD_PULLUP(GPIOD_PIN14) | \
                                         PIN_PUPD_PULLUP(GPIOD_PIN15))

@@ -92,7 +92,6 @@ PROJECT = linetime
 
 # Imported source files and paths
 CHIBIOS = ChibiOS
-GFXLIB = uGFX
 # Startup files.
 include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32f7xx.mk
 # HAL-OSAL files (optional).
@@ -103,13 +102,6 @@ include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
 include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
-
-GFXINC += $(GFXLIB)
-GFXSRC += $(GFXLIB)/src/gfx.c
-GFXSRC += $(GFXLIB)/src/gdriver/gdriver.c
-GFXSRC += $(GFXLIB)/src/gos/gos_chibios.c
-include $(GFXLIB)/src/gdisp/gdisp.mk
-include $(GFXLIB)/drivers/gdisp/STM32LTDC/driver.mk
 
 BOARDSRC= board.c
 BOARDINC= .
@@ -127,7 +119,6 @@ CSRC = $(STARTUPSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(FATFSSRC) \
-       $(GFXSRC) \
        $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
        main.c ublox.c cs2100.c measurements.c microsd.c lcd.c speaker.c
@@ -163,7 +154,6 @@ ASMXSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 INCDIR = $(CHIBIOS)/os/license \
          $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(FATFSINC) \
-         $(GFXINC) \
          $(CHIBIOS)/os/various \
          $(CHIBIOS)/os/hal/lib/streams
 

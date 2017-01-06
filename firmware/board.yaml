@@ -49,7 +49,7 @@ pins:
   LCD_SDA: pe6, af5
   LCD_SCL: pe2, af5
   LCD_CS: pe4, output
-  LCD_BACKLIGHT: pd12, af2
+  LCD_BACKLIGHT: pd12, af2, floating
 
   # Touchscreen controller (also ROM SPI bus) on SPI5
   TOUCH_INT: pf5
