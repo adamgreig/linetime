@@ -66,7 +66,7 @@ int main(void)
 	coord_t		ballcx, ballcy;
 	color_t		colour;
 	float		ii, spin, dy, spinspeed, h, f, g;
-    winx = 0; winy = 0; width = 320; height = 240;
+    winx = 1; winy = 1; width = 318; height = 238;
 	radius=height/5+height%2+1;	// The ball radius
 	ii = 1.0/radius;			// radius as easy math
 	floor=height/5-1;			// floor position
