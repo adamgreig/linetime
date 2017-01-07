@@ -7,6 +7,7 @@
 #include "hal.h"
 
 #include "ublox.h"
+#include "speaker.h"
 #include "microsd.h"
 
 #include "measurements.h"
@@ -123,6 +124,28 @@ static THD_FUNCTION(time_capture_thd, arg)
              * touching the time capture buffer.
              */
             continue;
+        }
+
+        /* Beep at the end of each hour */
+        if(ublox_last_utc.minute == 59) {
+            if(ublox_last_utc.second == 53)
+            {
+                speaker_on();
+            } if(ublox_last_utc.second == 54 ||
+               ublox_last_utc.second == 55 ||
+               ublox_last_utc.second == 56 ||
+               ublox_last_utc.second == 57 ||
+               ublox_last_utc.second == 58)
+            {
+                speaker_beep(100);
+            } else if(ublox_last_utc.second == 59 ||
+                      ublox_last_utc.second == 60)
+            {
+                speaker_beep(500);
+            }
+        } else if(ublox_last_utc.minute == 0 && ublox_last_utc.second == 0)
+        {
+            speaker_off();
         }
 
         /* Hold buffer lock while we wait for UTC */

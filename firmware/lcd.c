@@ -7,19 +7,21 @@
 
 #include "lcd.h"
 
-/***************************************************************** CONSTANTS */
+/******************************************************************* GLOBALS */
+binary_semaphore_t lcd_frame_bs;
+uint8_t (*lcd_framebuf)[320];
 /*****************************************************************************/
 
 /**************************************************************** PROTOTYPES */
-void backlight_init(void);
-void backlight_set(uint8_t brightness);
+static void backlight_init(void);
+static void backlight_set(uint8_t brightness);
 
-void ili9342_init(void);
-void ili9342_write_index(uint8_t index);
-void ili9342_write_data(uint8_t data);
+static void ili9342_init(void);
+static void ili9342_write_index(uint8_t index);
+static void ili9342_write_data(uint8_t data);
 
-void ltdc_init(void);
-void ltdc_layer1_init(void);
+static void ltdc_init(void);
+static void ltdc_layer1_init(void);
 /*****************************************************************************/
 
 /************************************************************ STATIC GLOBALS */
@@ -36,33 +38,33 @@ static const uint32_t clut[] = {
     0x06FF00FF,     /* Purple   */
     0x0700FFFF,     /* Cyan     */
 };
-#define BLACK   (0)
-#define WHITE   (1)
-#define RED     (2)
-#define GREEN   (3)
-#define BLUE    (4)
-#define YELLOW  (5)
-#define PURPLE  (6)
-#define CYAN    (7)
 /*****************************************************************************/
 
 /******************************************************************* STRUCTS */
 /*****************************************************************************/
 
 /******************************************************************* BUFFERS */
-/* Our main frame buffer. It's huge.
- * We put it into SRAM1 because
- * a) it won't fit in DTCM
+/* Our main frame buffers. They're huge.
+ * We put them into SRAM1 because
+ * a) they won't fit in DTCM
  * b) we can turn off cache and DMA directly
+ * Framebufs 1 and 2 swap around each frame to do double buffering.
+ * framebuf_front points to the memory currently being drawn to the LCD,
+ * framebuf_back points to the memory area to draw to.
  */
-static uint8_t framebuf[240][320]
+static uint8_t framebuf_1[240][320]
     __attribute__((section(".sram1")))
     __attribute__((aligned(4)));
+static uint8_t framebuf_2[240][320]
+    __attribute__((section(".sram1")))
+    __attribute__((aligned(4)));
+static uint8_t (*framebuf_front)[320];
+static uint8_t (*framebuf_back)[320];
 /*****************************************************************************/
 
 /******************************************************* BACKLIGHT FUNCTIONS */
 /* Set up the backlight PWM for 0-100% brightness */
-void backlight_init()
+static void backlight_init()
 {
     static const PWMConfig pwm_cfg = {
         .frequency = 100000,
@@ -79,14 +81,14 @@ void backlight_init()
     pwmStart(&PWMD4, &pwm_cfg);
 }
 
-void backlight_set(uint8_t brightness)
+static void backlight_set(uint8_t brightness)
 {
     pwmEnableChannel(&PWMD4, 0, brightness);
 }
 /*****************************************************************************/
 
 /************************************************************ LTDC FUNCTIONS */
-void ltdc_init(void)
+static void ltdc_init(void)
 {
     /* Reset and enable the LTDC */
     rccResetLTDC();
@@ -107,6 +109,11 @@ void ltdc_init(void)
     LTDC->AWCR = ((hsync+hbp+haw-1)<<16)     | (vsync+vbp+vah-1);
     LTDC->TWCR = ((hsync+hbp+haw+hfp-1)<<16) | (vsync+vbp+vah+vfp-1);
 
+    /* Interrupt on final line, just before vfp period starts. */
+    LTDC->LIPCR = vsync+vbp+vah;
+    LTDC->IER = LTDC_IER_LIE;
+    nvicEnableVector(STM32_LTDC_EV_NUMBER, 95);
+
     ltdc_layer1_init();
 
     /* Reload shadow registers */
@@ -117,7 +124,7 @@ void ltdc_init(void)
     LTDC->GCR = LTDC_GCR_LTDCEN;
 }
 
-void ltdc_layer1_init(void)
+static void ltdc_layer1_init(void)
 {
     /* Horizontal Position */
     const uint16_t whstart = 0 + 10 + 20;
@@ -136,7 +143,7 @@ void ltdc_layer1_init(void)
     LTDC_Layer1->CACR = 255;
 
     /* Frame Buffer */
-    LTDC_Layer1->CFBAR = (intptr_t)framebuf;
+    LTDC_Layer1->CFBAR = (intptr_t)framebuf_front;
 
     /* Frame Buffer pitch and line length */
     const uint16_t pitch = 320;
@@ -155,10 +162,40 @@ void ltdc_layer1_init(void)
     /* Enable the layer with CLUT */
     LTDC_Layer1->CR = LTDC_LxCR_CLUTEN | LTDC_LxCR_LEN;
 }
+
+/* Interrupt handler swaps framebuf_front and framebuf_back */
+CH_IRQ_HANDLER(STM32_LTDC_EV_HANDLER) {
+    CH_IRQ_PROLOGUE();
+
+    /* Swap buffers around */
+    if(framebuf_front == framebuf_1) {
+        framebuf_front = framebuf_2;
+        framebuf_back  = framebuf_1;
+    } else {
+        framebuf_front = framebuf_1;
+        framebuf_back  = framebuf_2;
+    }
+
+    lcd_framebuf = framebuf_back;
+
+    /* Set LTDC to new buffer and reload shadow registers */
+    LTDC_Layer1->CFBAR = (intptr_t)framebuf_front;
+    LTDC->SRCR |= LTDC_SRCR_IMR;
+
+    /* Signal our semaphore that the buffers have swapped */
+    chSysLockFromISR();
+    chBSemSignalI(&lcd_frame_bs);
+    chSysUnlockFromISR();
+
+    /* Clear interrupt flag */
+    LTDC->ICR = LTDC_ICR_CLIF;
+
+    CH_IRQ_EPILOGUE();
+}
 /*****************************************************************************/
 
 /********************************************************* ILI9342 FUNCTIONS */
-void ili9342_init()
+static void ili9342_init()
 {
     static const SPIConfig spi_cfg = {
         .end_cb = NULL,
@@ -208,7 +245,7 @@ void ili9342_init()
         ili9342_write_data(0x0A);
         ili9342_write_data(0x82);
         ili9342_write_data(0x27);
-        ili9342_write_data(0x01);
+        ili9342_write_data(0x02);
 
     /* Interface control */
     ili9342_write_index(0xF6);
@@ -271,13 +308,13 @@ void ili9342_init()
     spiUnselect(&SPID4);
 }
 
-void ili9342_write_index(uint8_t index)
+static void ili9342_write_index(uint8_t index)
 {
     palClearLine(LINE_LCD_DCX);
     spiPolledExchange(&SPID4, index);
 }
 
-void ili9342_write_data(uint8_t data)
+static void ili9342_write_data(uint8_t data)
 {
     palSetLine(LINE_LCD_DCX);
     spiPolledExchange(&SPID4, data);
@@ -291,34 +328,13 @@ void lcd_init()
      * Everything else is in the DTCM (uncachable) anyway.
      */
     SCB_DisableDCache();
-    memset(framebuf, 0, sizeof(framebuf));
-    for(size_t y=0; y<240; y++) {
-        framebuf[y][0] = WHITE;
-    }
-    for(size_t x=1; x<319; x++) {
-        framebuf[0][x] = WHITE;
-        for(size_t y=1; y<239; y++) {
-            if(x>320/2)
-                if(y>240/2)
-                    framebuf[y][x] = RED;
-                else
-                    framebuf[y][x] = GREEN;
-            else
-                if(y>240/2)
-                    framebuf[y][x] = BLUE;
-                else
-                    framebuf[y][x] = YELLOW;
-        }
-        framebuf[239][x] = WHITE;
-    }
-    for(size_t y=0; y<240; y++) {
-        framebuf[y][319] = WHITE;
-    }
-    for(size_t x=0; x<10; x++) {
-        for(size_t y=0; y<10; y++) {
-            framebuf[y][x] = WHITE;
-        }
-    }
+    memset(framebuf_1, 0, sizeof(framebuf_1));
+    memset(framebuf_2, 0, sizeof(framebuf_2));
+
+    framebuf_front = framebuf_1;
+    framebuf_back = framebuf_2;
+    lcd_framebuf = framebuf_2;
+    chBSemObjectInit(&lcd_frame_bs, false);
 
     backlight_init();
     backlight_set(0);

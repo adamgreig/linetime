@@ -10,6 +10,7 @@
 #include "microsd.h"
 #include "lcd.h"
 #include "speaker.h"
+#include "gui.h"
 
 
 int main(void)
@@ -18,7 +19,7 @@ int main(void)
     chSysInit();
 
     /* Bring up the ublox, including the 1MHz TIMEPULSE output */
-    /*ublox_init(&SD2);*/
+    ublox_init(&SD2);
 
     /* Set up the CS2100 to provide the 26MHz GPS-disciplined clock */
     /*cs2100_configure(&I2CD3);*/
@@ -28,12 +29,11 @@ int main(void)
 
     /* Turn on the screen and speaker */
     lcd_init();
-    /*speaker_init();*/
-
-    chThdSleep(TIME_INFINITE);
+    speaker_init();
+    gui_init();
 
     /* Start up the µSD card, ready for logging */
-    /*microsd_init();*/
+    microsd_init();
 
     /* Wait until GPS lock before starting mains measurements */
     while(!ublox_last_utc.valid) {
@@ -44,7 +44,7 @@ int main(void)
     }
 
     /* Start taking mains measurements */
-    /*measurements_init();*/
+    measurements_init();
 
     while(true) {
         palSetLine(LINE_LED_GRN);

@@ -144,7 +144,7 @@ SECTIONS
         *(.bss.__sram1_*)
         . = ALIGN(4);
         __sram1_end__ = .;
-    } > ram1
+    } > ram0
 }
 
 /* Code rules inclusion.*/
