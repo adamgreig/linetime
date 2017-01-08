@@ -34,7 +34,7 @@ MEMORY
     flash6  : org = 0x00000000, len = 0
     flash7  : org = 0x00000000, len = 0
     ram0    : org = 0x20020000, len = 368k      /* SRAM1 */
-    ram1    : org = 0x20020000, len = 368k      /* SRAM1 */
+    ram1    : org = 0x20020000, len = 0k        /* don't use */
     ram2    : org = 0x2007C000, len = 16k       /* SRAM2 */
     ram3    : org = 0x20000000, len = 128k      /* DTCM-RAM */
     ram4    : org = 0x00000000, len = 16k       /* ITCM-RAM */
@@ -117,6 +117,7 @@ SECTIONS
     .eth (NOLOAD) : ALIGN(4)
     {
         __eth_base__ = .;
+        . = ALIGN(4);
         *(.eth)
         *(.eth.*)
         *(.bss.__eth_*)

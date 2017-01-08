@@ -18,6 +18,10 @@
 #define NS_PER_TICK (1000000000 / TIMER_FREQ)
 /*****************************************************************************/
 
+/******************************************************************* GLOBALS */
+EVENTSOURCE_DECL(measurements_pps_evt);
+volatile uint32_t *const measurements_dimiseconds = &(TIM7->CNT);
+/*****************************************************************************/
 
 /**************************************************************** PROTOTYPES */
 static void measurements_adcs_init(void);
@@ -66,29 +70,29 @@ static adcsample_t mains_wave_buf[MAINS_WAVE_BUFLEN];
 #define TIME_BUF_SIZE (4)
 static struct time_capture_item time_capture_buf[TIME_BUF_SIZE] = {{0}};
 static size_t time_capture_buf_idx = 0;
-static mutex_t time_capture_buf_mtx;
+static MUTEX_DECL(time_capture_buf_mtx);
 static gptcnt_t time_capture_pps_timestamp;
-static binary_semaphore_t time_capture_pps_bs;
 
 /* Store the memory pool and mailbox for the cycle queue. */
 #define CYCLE_QUEUE_SIZE (128)
-static memory_pool_t cycle_queue_pool;
 static uint8_t cycle_queue_pool_buf[CYCLE_QUEUE_SIZE
                                     * sizeof(struct mains_cycle_measurement)]
     __attribute__((aligned(sizeof(stkalign_t))));
-static mailbox_t cycle_queue_mbox;
+static MEMORYPOOL_DECL(cycle_queue_pool,
+                       sizeof(struct mains_cycle_measurement), NULL);
 static msg_t cycle_queue_mbox_buf[CYCLE_QUEUE_SIZE]
     __attribute__((aligned(sizeof(stkalign_t))));
+static MAILBOX_DECL(cycle_queue_mbox, cycle_queue_mbox_buf, CYCLE_QUEUE_SIZE);
 
 /* Store the memory pool and mailbox for the waveform queue. */
 #define WAVE_QUEUE_SIZE (16)
-static memory_pool_t wave_queue_pool;
 static uint8_t wave_queue_pool_buf[WAVE_QUEUE_SIZE
                                    * sizeof(struct mains_waveform)]
     __attribute__((aligned(sizeof(stkalign_t))));
-static mailbox_t wave_queue_mbox;
+static MEMORYPOOL_DECL(wave_queue_pool, sizeof(struct mains_waveform), NULL);
 static msg_t wave_queue_mbox_buf[WAVE_QUEUE_SIZE]
     __attribute__((aligned(sizeof(stkalign_t))));
+static MAILBOX_DECL(wave_queue_mbox, wave_queue_mbox_buf, WAVE_QUEUE_SIZE);
 /*****************************************************************************/
 
 
@@ -110,16 +114,23 @@ static THD_WORKING_AREA(time_capture_thd_wa, 512);
 static THD_FUNCTION(time_capture_thd, arg)
 {
     (void)arg;
+    chRegSetThreadName("time_capture");
 
-    msg_t pps_rv, utc_rv;
     gptcnt_t pps_ts;
     struct ublox_utc pps_utc;
+
+    event_listener_t pps_listener;
+    event_listener_t utc_listener;
+    eventmask_t evt;
+
+    chEvtRegister(&measurements_pps_evt, &pps_listener, 0);
+    chEvtRegister(&ublox_last_utc_evt, &utc_listener, 1);
 
     while(true) {
 
         /* Wait for a new PPS */
-        pps_rv = chBSemWaitTimeout(&time_capture_pps_bs, MS2ST(1001));
-        if(pps_rv != MSG_OK) {
+        evt = chEvtWaitOneTimeout(EVENT_MASK(0), MS2ST(1001));
+        if(evt == 0) {
             /* Probably the PPS has stopped. We'll just try again without
              * touching the time capture buffer.
              */
@@ -154,8 +165,8 @@ static THD_FUNCTION(time_capture_thd, arg)
         pps_ts = time_capture_pps_timestamp;
 
         /* Now wait for corresponding UTC */
-        utc_rv = chBSemWaitTimeout(&ublox_last_utc_bs, MS2ST(500));
-        if(utc_rv != MSG_OK) {
+        evt = chEvtWaitOneTimeout(EVENT_MASK(1), MS2ST(500));
+        if(evt == 0) {
             /* Probably we lost lock or UTC is not fully resolved despite PPS.
              * Release the lock but don't update the buffer.
              */
@@ -205,6 +216,7 @@ static THD_WORKING_AREA(cycle_queue_thd_wa, 256);
 static THD_FUNCTION(cycle_queue_thd, arg)
 {
     (void)arg;
+    chRegSetThreadName("cycle_queue");
 
     msg_t mbox_r;
     struct mains_cycle_measurement *measurement = NULL;
@@ -332,6 +344,7 @@ static THD_WORKING_AREA(wave_queue_thd_wa, 256);
 static THD_FUNCTION(wave_queue_thd, arg)
 {
     (void)arg;
+    chRegSetThreadName("wave_queue");
 
     msg_t mbox_r;
     struct mains_waveform *waveform = NULL;
@@ -389,6 +402,7 @@ static THD_WORKING_AREA(mains_bias_thd_wa, 128);
 static THD_FUNCTION(mains_bias_thd, arg)
 {
     (void)arg;
+    chRegSetThreadName("mains_bias");
 
     static const ADCConversionGroup adc2_grp = {
         .circular = false,
@@ -427,8 +441,8 @@ static void measurements_adc_cb(ADCDriver *adcp, adcsample_t* buf, size_t n)
     struct mains_waveform *waveform;
 
     /* Capture current ticks since last PPS, as early as possible */
-    gptcnt_t pps_timestamp = GPTD2.tim->CCR[1];
-    uint32_t delta_ticks = (GPTD2.tim->CNT) - pps_timestamp;
+    gptcnt_t pps_timestamp = TIM2->CCR2;
+    uint32_t delta_ticks = (TIM2->CNT) - pps_timestamp;
 
     /* Check buffers are the right length */
     chDbgAssert(n == MAINS_WAVE_BUFLEN/2,
@@ -482,14 +496,14 @@ static void measurements_gpt2_cb(GPTDriver* gptd)
     static uint32_t prev_ccr1 = 0, prev_ccr2 = 0;
 
     /* Handle PPS */
-    if(GPTD2.tim->CCR[1] != prev_ccr2) {
-        prev_ccr2 = GPTD2.tim->CCR[1];
+    if(TIM2->CCR2 != prev_ccr2) {
+        prev_ccr2 = TIM2->CCR2;
         measurements_handle_pps();
     }
 
     /* Handle mains zero crossing */
-    if(GPTD2.tim->CCR[0] != prev_ccr1) {
-        prev_ccr1 = GPTD2.tim->CCR[0];
+    if(TIM2->CCR1 != prev_ccr1) {
+        prev_ccr1 = TIM2->CCR1;
         measurements_handle_zc();
     }
 }
@@ -498,9 +512,9 @@ static void measurements_handle_zc()
 {
     /* Grab relevant timestamps */
     struct mains_cycle_measurement *cycle;
-    gptcnt_t zc_ts = GPTD2.tim->CCR[0];
-    gptcnt_t pps_ts = GPTD2.tim->CCR[1];
-    gptcnt_t adc_ts = GPTD9.tim->CNT;
+    gptcnt_t zc_ts = TIM2->CCR1;
+    gptcnt_t pps_ts = TIM2->CCR2;
+    gptcnt_t adc_ts = TIM9->CNT;
 
     /* Allocate memory in the queue pool for them */
     chSysLockFromISR();
@@ -526,11 +540,14 @@ static void measurements_handle_zc()
 static void measurements_handle_pps()
 {
     /* Save the captured timer count at the PPS moment. */
-    time_capture_pps_timestamp = GPTD2.tim->CCR[1];
+    time_capture_pps_timestamp = TIM2->CCR2;
+
+    /* Reset our dimisecond-counting timer. */
+    TIM7->EGR |= TIM_EGR_UG;
 
     /* Signal new timestamp the time capture thread. */
     chSysLockFromISR();
-    chBSemSignalI(&time_capture_pps_bs);
+    chEvtBroadcastI(&measurements_pps_evt);
     chSysUnlockFromISR();
 }
 /*****************************************************************************/
@@ -551,12 +568,22 @@ static void measurements_timers_init()
     };
     gptStart(&GPTD2, &gpt2_cfg);
     /* Set CC1 and CC2 to input capture mode on TI1 and TI2. */
-    GPTD2.tim->CCMR1 = STM32_TIM_CCMR1_CC1S(1) | STM32_TIM_CCMR1_CC2S(1);
+    TIM2->CCMR1 = STM32_TIM_CCMR1_CC1S(1) | STM32_TIM_CCMR1_CC2S(1);
     /* Enable CC1 and CC2, non-inverted rising-edge. */
-    GPTD2.tim->CCER = STM32_TIM_CCER_CC1E | STM32_TIM_CCER_CC2E;
+    TIM2->CCER = STM32_TIM_CCER_CC1E | STM32_TIM_CCER_CC2E;
     /* Have to set this here rather than in gpt2_cfg as gptStart clears it.. */
-    GPTD2.tim->DIER = STM32_TIM_DIER_CC1IE | STM32_TIM_DIER_CC2IE;
+    TIM2->DIER = STM32_TIM_DIER_CC1IE | STM32_TIM_DIER_CC2IE;
     gptStartContinuous(&GPTD2, 0xFFFFFFFF);
+
+    /* Configure GPT7 to run at 10kHz, counting dimiseconds since PPS */
+    static const GPTConfig gpt7_cfg = {
+        .frequency = 10000,
+        .callback = NULL,
+        .cr2 = 0,
+        .dier = 0,
+    };
+    gptStart(&GPTD7, &gpt7_cfg);
+    gptStartContinuous(&GPTD7, 10000);
 
     /* Configure GPT9 to run off GPT3's TRGO,
      * counting how many ADC samples have been captured,
@@ -570,7 +597,7 @@ static void measurements_timers_init()
     };
     /* Trigger from TIM3 TRGO, and clock from that trigger */
     gptStart(&GPTD9, &gpt9_cfg);
-    GPTD9.tim->SMCR =   STM32_TIM_SMCR_TS(1) | STM32_TIM_SMCR_SMS(7);
+    TIM9->SMCR =   STM32_TIM_SMCR_TS(1) | STM32_TIM_SMCR_SMS(7);
     gptStartContinuous(&GPTD9, MAINS_WAVE_BUFLEN);
 
     /* Configure GPT3 for 100kHz clock,
@@ -585,9 +612,9 @@ static void measurements_timers_init()
         .dier = 0,
     };
     gptStart(&GPTD3, &gpt3_cfg);
-    GPTD3.tim->CCR[3] = 1;
-    GPTD3.tim->CCER = STM32_TIM_CCER_CC4E;
-    GPTD3.tim->CCMR2 = STM32_TIM_CCMR2_OC4M(6);
+    TIM3->CCR4 = 1;
+    TIM3->CCER = STM32_TIM_CCER_CC4E;
+    TIM3->CCMR2 = STM32_TIM_CCMR2_OC4M(6);
     gptStartContinuous(&GPTD3, 24);
 }
 
@@ -612,7 +639,7 @@ static void measurements_adcs_init()
     adcStart(&ADCD2, NULL);
 
     /* Start the ADC1 conversions. Since it's clocked by TIM3 CC4, it won't
-     * actually being converting until the timer is started.
+     * actually begin converting until the timer is started.
      */
     adcStartConversion(&ADCD1, &adc1_grp, mains_wave_buf, MAINS_WAVE_BUFLEN);
 }
@@ -620,20 +647,11 @@ static void measurements_adcs_init()
 void measurements_init()
 {
 
-    /* Initialise the time capture buffer */
-    chMtxObjectInit(&time_capture_buf_mtx);
-    chBSemObjectInit(&time_capture_pps_bs, false);
-
-    /* Initialise the cycle memory pool and mailbox */
-    chPoolObjectInit(&cycle_queue_pool,
-                     sizeof(struct mains_cycle_measurement), NULL);
+    /* Load the cycle memory pool */
     chPoolLoadArray(&cycle_queue_pool, cycle_queue_pool_buf, CYCLE_QUEUE_SIZE);
-    chMBObjectInit(&cycle_queue_mbox, cycle_queue_mbox_buf, CYCLE_QUEUE_SIZE);
 
-    /* Initialise the waveform memory pool and mailbox */
-    chPoolObjectInit(&wave_queue_pool, sizeof(struct mains_waveform), NULL);
+    /* Load the waveform memory pool */
     chPoolLoadArray(&wave_queue_pool, wave_queue_pool_buf, WAVE_QUEUE_SIZE);
-    chMBObjectInit(&wave_queue_mbox, wave_queue_mbox_buf, WAVE_QUEUE_SIZE);
 
     /* Start threads to process queues and submit items onwards */
     chThdCreateStatic(time_capture_thd_wa, sizeof(time_capture_thd_wa),
@@ -646,7 +664,10 @@ void measurements_init()
     /* Wait for a PVT packet to ensure the threads are ready to process
      * their queues before starting measurements.
      */
-    chBSemWait(&ublox_last_utc_bs);
+    event_listener_t utc_listener;
+    chEvtRegister(&ublox_last_utc_evt, &utc_listener, 0);
+    chEvtWaitOne(EVENT_MASK(0));
+    chEvtUnregister(&ublox_last_utc_evt, &utc_listener);
 
     /* Start up the ADCs */
     measurements_adcs_init();

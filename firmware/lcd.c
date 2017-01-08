@@ -8,7 +8,7 @@
 #include "lcd.h"
 
 /******************************************************************* GLOBALS */
-binary_semaphore_t lcd_frame_bs;
+EVENTSOURCE_DECL(lcd_frame_evt);
 uint8_t (*lcd_framebuf)[320];
 /*****************************************************************************/
 
@@ -184,7 +184,7 @@ CH_IRQ_HANDLER(STM32_LTDC_EV_HANDLER) {
 
     /* Signal our semaphore that the buffers have swapped */
     chSysLockFromISR();
-    chBSemSignalI(&lcd_frame_bs);
+    chEvtBroadcastI(&lcd_frame_evt);
     chSysUnlockFromISR();
 
     /* Clear interrupt flag */
@@ -324,17 +324,12 @@ static void ili9342_write_data(uint8_t data)
 /********************************************************** PUBLIC FUNCTIONS */
 void lcd_init()
 {
-    /* Disable DCACHE so framebuf isn't corrupted.
-     * Everything else is in the DTCM (uncachable) anyway.
-     */
-    SCB_DisableDCache();
     memset(framebuf_1, 0, sizeof(framebuf_1));
     memset(framebuf_2, 0, sizeof(framebuf_2));
 
     framebuf_front = framebuf_1;
     framebuf_back = framebuf_2;
     lcd_framebuf = framebuf_2;
-    chBSemObjectInit(&lcd_frame_bs, false);
 
     backlight_init();
     backlight_set(0);

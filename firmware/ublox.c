@@ -65,7 +65,7 @@ static void ublox_error(const char* err);
 static SerialDriver* ublox_seriald;
 
 /* Used to signal new UTC values */
-binary_semaphore_t ublox_last_utc_bs;
+EVENTSOURCE_DECL(ublox_last_utc_evt);
 struct ublox_utc ublox_last_utc;
 
 /* UBX Decoding State Machine States */
@@ -649,7 +649,7 @@ static enum ublox_result ublox_process_message(
 
             /* Notify any listeners that we have a new valid time */
             if(ublox_last_utc.valid) {
-                chBSemSignal(&ublox_last_utc_bs);
+                chEvtBroadcast(&ublox_last_utc_evt);
             }
 
             /* Upload the first valid PVT, and then upload
@@ -998,6 +998,8 @@ static bool ublox_configure_msg(void)
 static THD_WORKING_AREA(ublox_thd_wa, 1024);
 static THD_FUNCTION(ublox_thd, arg) {
     (void)arg;
+    chRegSetThreadName("ublox");
+
     /* We'll reset the uBlox so it's in a known state */
     palClearLine(LINE_GPS_RESET);
     chThdSleepMilliseconds(100);
@@ -1022,7 +1024,6 @@ void ublox_init(SerialDriver* seriald) {
 
     /* Set up the UTC notifying stuff */
     ublox_last_utc.valid = false;
-    chBSemObjectInit(&ublox_last_utc_bs, false);
 
     /* Start up the ublox processing thread */
     chThdCreateStatic(ublox_thd_wa, sizeof(ublox_thd_wa), NORMALPRIO,

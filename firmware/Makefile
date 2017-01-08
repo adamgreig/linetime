@@ -101,7 +101,9 @@ include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+include $(CHIBIOS)/os/hal/lib/streams/streams.mk
 include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
+include $(CHIBIOS)/os/various/lwip_bindings/lwip.mk
 
 BOARDSRC= board.c
 BOARDINC= .
@@ -118,11 +120,12 @@ CSRC = $(STARTUPSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
+       $(STREAMSSRC) \
        $(FATFSSRC) \
-       $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
-       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
+       $(LWSRC) \
+       $(CHIBIOS)/os/various/evtimer.c \
        main.c ublox.c cs2100.c measurements.c microsd.c lcd.c speaker.c \
-       gui.c
+       gui.c rom.c network.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -154,7 +157,7 @@ ASMXSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
 INCDIR = $(CHIBIOS)/os/license \
          $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
-         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(FATFSINC) \
+         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(FATFSINC) $(LWINC) \
          $(CHIBIOS)/os/various \
          $(CHIBIOS)/os/hal/lib/streams
 
@@ -236,13 +239,14 @@ flash: build/$(PROJECT).elf $(OUTFILES)
 	arm-none-eabi-gdb --batch \
 		              -ex 'target extended-remote $(BMP_PORT)' \
 					  -ex 'monitor version' \
+					  -ex 'monitor hard_srst' \
 					  -ex 'monitor swdp_scan' \
 					  -ex "attach 1" \
 					  -ex 'load build/$(PROJECT).elf'
 
 debug: build/$(PROJECT).elf $(OUTFILES)
 	arm-none-eabi-gdb -ex 'target extended-remote $(BMP_PORT)' \
-		              -ex 'monitor swdp_scan' \
+					  -ex 'monitor swdp_scan' \
 					  -ex "attach 1" \
 					  -ex "file build/$(PROJECT).elf"
 

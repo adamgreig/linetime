@@ -8,6 +8,7 @@
 #include "lcd.h"
 #include "ublox.h"
 #include "gui.h"
+#include "measurements.h"
 
 
 /**************************************************************** PROTOTYPES */
@@ -15,6 +16,12 @@ static void draw_circle(uint16_t cx, uint16_t cy, uint16_t r, uint8_t colour);
 static void draw_line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
                       uint8_t colour);
 static void draw_clock(uint16_t cx, uint16_t cy, uint16_t r);
+/*****************************************************************************/
+
+/************************************************************ STATIC GLOBALS */
+static uint16_t clock_year;
+static uint8_t clock_month, clock_day, clock_hour, clock_minute, clock_second;
+static MUTEX_DECL(clock_mtx);
 /*****************************************************************************/
 
 /********************************************************* DRAWING FUNCTIONS */
@@ -99,10 +106,17 @@ static void draw_clock(uint16_t cx, uint16_t cy, uint16_t r)
         draw_line(cx-dy0, cy+dx0, cx-dy1, cy+dx1, LCD_WHITE);
     }
 
+    /* Get the current clock time */
+    chMtxLock(&clock_mtx);
+    uint8_t hour = clock_hour;
+    uint8_t minute = clock_minute;
+    uint8_t second = clock_second;
+    chMtxUnlock(&clock_mtx);
+
     /* Compute angles for clock hands */
-    float theta_h = ((float)(ublox_last_utc.hour%12)/12.0) * 2.0f * M_PI;
-    float theta_m = ((float) ublox_last_utc.minute  /60.0) * 2.0f * M_PI;
-    float theta_s = ((float) ublox_last_utc.second  /60.0) * 2.0f * M_PI;
+    float theta_h = ((float)(hour%12)/12.0) * 2.0f * M_PI;
+    float theta_m = ((float) minute  /60.0) * 2.0f * M_PI;
+    float theta_s = ((float) second  /60.0) * 2.0f * M_PI;
     theta_h += theta_m / 12.0f;
 
     draw_line(cx, cy,
@@ -121,12 +135,17 @@ static void draw_clock(uint16_t cx, uint16_t cy, uint16_t r)
 /*****************************************************************************/
 
 /******************************************************************* THREADS */
-static THD_WORKING_AREA(clock_thd_wa, 512);
-static THD_FUNCTION(clock_thd, arg)
+static THD_WORKING_AREA(gui_thd_wa, 512);
+static THD_FUNCTION(gui_thd, arg)
 {
     (void)arg;
+    chRegSetThreadName("gui");
+
+    event_listener_t frame_listener;
+    chEvtRegister(&lcd_frame_evt, &frame_listener, 0);
+
     while(true) {
-        chBSemWait(&lcd_frame_bs);
+        chEvtWaitOne(EVENT_MASK(0));
         memset(lcd_framebuf, 0, 320*240);
         draw_clock(320/2, 240/2, 100);
 
@@ -152,12 +171,107 @@ static THD_FUNCTION(clock_thd, arg)
         }
     }
 }
+
+static THD_WORKING_AREA(clock_thd_wa, 128);
+static THD_FUNCTION(clock_thd, arg)
+{
+    (void)arg;
+    chRegSetThreadName("clock");
+
+    uint16_t year;
+    uint8_t month, day, hour, minute, second;
+
+    event_listener_t pps_listener;
+    chEvtRegister(&measurements_pps_evt, &pps_listener, 0);
+
+    while(true) {
+        chEvtWaitOne(EVENT_MASK(0));
+
+        year = ublox_last_utc.year;
+        month = ublox_last_utc.month;
+        day = ublox_last_utc.day;
+        hour = ublox_last_utc.hour;
+        minute = ublox_last_utc.minute;
+        second = ublox_last_utc.second;
+
+        second++;
+
+        if(second == 60) {
+            second = 0;
+            minute++;
+            if(minute == 60) {
+                minute = 0;
+                hour++;
+                if(hour == 24) {
+                    hour = 0;
+                    day++;
+                    if(month == 1 || month ==  3 || month == 5 || month == 7 ||
+                       month == 8 || month == 10 || month == 12)
+                    {
+                        if(day == 32) {
+                            day = 0;
+                            month++;
+                            if(month == 13) {
+                                month = 0;
+                                year++;
+                            }
+                        }
+                    } else if(month == 4 || month == 6 || month == 9 ||
+                              month == 11)
+                    {
+                        if(day == 31) {
+                            day = 0;
+                            month++;
+                            if(month == 13) {
+                                month = 0;
+                                year++;
+                            }
+                        }
+                    } else if(month == 2) {
+                        if(year % 4 == 0 &&
+                           ((year % 100 != 0) || (year % 400 == 0)))
+                        {
+                            if(day == 30) {
+                                day = 0;
+                                month++;
+                                if(month == 13) {
+                                    month = 0;
+                                    year++;
+                                }
+                            }
+                        } else {
+                            if(day == 29) {
+                                day = 0;
+                                month++;
+                                if(month == 13) {
+                                    month = 0;
+                                    year++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        chMtxLock(&clock_mtx);
+        clock_year = year;
+        clock_month = month;
+        clock_day = day;
+        clock_hour = hour;
+        clock_minute = minute;
+        clock_second = second;
+        chMtxUnlock(&clock_mtx);
+    }
+}
 /*****************************************************************************/
 
 /********************************************************** PUBLIC FUNCTIONS */
 void gui_init()
 {
-    chThdCreateStatic(clock_thd_wa, sizeof(clock_thd_wa), NORMALPRIO-1,
+    chThdCreateStatic(clock_thd_wa, sizeof(clock_thd_wa), NORMALPRIO,
                       clock_thd, NULL);
+    chThdCreateStatic(gui_thd_wa, sizeof(gui_thd_wa), NORMALPRIO-1,
+                      gui_thd, NULL);
 }
 /*****************************************************************************/

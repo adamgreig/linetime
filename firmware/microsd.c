@@ -18,9 +18,9 @@ static uint8_t microsd_heap_buf[16*1024]
     __attribute__((aligned(sizeof(stkalign_t))));
 
 /* Mailbox object and buffer */
-static mailbox_t microsd_mailbox;
-static msg_t microsd_mailbox_buf[256]
+static msg_t microsd_mbox_buf[256]
     __attribute__((aligned(sizeof(stkalign_t))));
+static MAILBOX_DECL(microsd_mbox, microsd_mbox_buf, 256);
 
 /* MicroSD write buffer */
 static uint8_t microsd_card_buf[16*1024]
@@ -96,6 +96,7 @@ static THD_WORKING_AREA(microsd_thd_wa, 4096);
 static THD_FUNCTION(microsd_thd, arg)
 {
     (void)arg;
+    chRegSetThreadName("microsd");
 
     FATFS file_system;
     FIL file;
@@ -111,7 +112,8 @@ static THD_FUNCTION(microsd_thd, arg)
 
     while(true) {
         /* Block getting a new pointer from mailbox */
-        mailbox_r = chMBFetch(&microsd_mailbox, (msg_t*)&mailbox_p, TIME_INFINITE);
+        mailbox_r = chMBFetch(&microsd_mbox, (msg_t*)&mailbox_p,
+                              TIME_INFINITE);
         if(mailbox_r != MSG_OK || mailbox_p == 0) {
             continue;
         }
@@ -162,8 +164,6 @@ void microsd_init()
 {
     chHeapObjectInit(&microsd_heap, microsd_heap_buf,
                      sizeof(microsd_heap_buf));
-    chMBObjectInit(&microsd_mailbox, microsd_mailbox_buf,
-                   sizeof(microsd_mailbox_buf)/sizeof(msg_t));
     memset(microsd_card_buf, 0, sizeof(microsd_card_buf));
 
     chThdCreateStatic(microsd_thd_wa, sizeof(microsd_thd_wa),
@@ -184,7 +184,7 @@ void microsd_log(uint8_t tag, size_t len, void* data)
     memcpy(&p[2], data, len);
 
     /* Try to post the new thing, free immediately if we can't */
-    if(chMBPost(&microsd_mailbox, (intptr_t)p, TIME_IMMEDIATE) != MSG_OK) {
+    if(chMBPost(&microsd_mbox, (intptr_t)p, TIME_IMMEDIATE) != MSG_OK) {
         chHeapFree(p);
     }
 }

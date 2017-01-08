@@ -1,5 +1,5 @@
-#ifndef SPEAKER_H
-#define SPEAKER_H
+#ifndef LINETIME_SPEAKER_H
+#define LINETIME_SPEAKER_H
 
 void speaker_init(void);
 void speaker_off(void);

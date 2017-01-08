@@ -1,5 +1,5 @@
-#ifndef CS2100_H
-#define CS2100_H
+#ifndef LINETIME_CS2100_H
+#define LINETIME_CS2100_H
 
 #include "hal.h"
 

@@ -1,7 +1,6 @@
 # Firmware Outline/To-Do
 
-* Technical Debt
-    * Tidy up queue system and split out from microSD so ethernet can use it
+* General
     * Timestamps for waves are currently the final entry but ideally would be
       the first entry - if you use the last waveform's timestamp for the next
       waveform you get this property, basically..
@@ -11,25 +10,31 @@
       Could make the buffer longer and either make the waveform structs longer
       too, or generate many of them, or instead could find the RMS inside the
       ISR (ew).
+    * Timestamp the PPS signal so we can see how steady it is compared to PLL
+
+* New Queue
+    * Receive messages into queue instead of directly to microSD heap
+    * Queue up say 16k worth of data and then try to send to server
+    * If data can't be sent to server, save to SD card instead
+    * Go through SD card once connection restored to find any non-uploaded
+      files and upload them
 
 * Ethernet:
-    * Read MAC address from ROM
-    * LWIP to send TCP packets
+    * Send out TCP packets (HTTP POST?) with buffer contents
     * HTTP to u-Blox AssistNow Online and send to ublox because hey why not
+    * Horrible packet loss issue. Not sure what to do about it.
 
 * Battery:
     * ADC3 to monitor charge current and battery voltage
+    * Send values into queue
     * Cycle CE as required
 
-* LCD:
-    * Backlight PWM
-    * SPI config/initialisation
-    * TFT LCD peripheral
-    * UI stuff...
-
-* Sounder:
-    * DAC to amp
-    * Tone generation
+* GUI
+    * Add font rendering
+    * Display current UTC time/date, difference to electric clock time,
+      current mains frequency and RMS voltage and waveform,
+      plus battery status, GPS status, network status, mains presence, etc
+    * Disable LCD backlight when running off battery power
 
 * Touch screen controller:
     * Worry about this much later

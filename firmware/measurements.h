@@ -1,5 +1,5 @@
-#ifndef MAINS_H
-#define MAINS_H
+#ifndef LINETIME_MEASUREMENTS_H
+#define LINETIME_MEASUREMENTS_H
 
 #include <stdint.h>
 
@@ -39,5 +39,14 @@ struct mains_waveform {
     /* Waveform sampled at 1ks/s. */
     int8_t waveform[128];
 };
+
+struct ublox_pps {
+    /* Free running nanosecond counter value at PPS instant */
+    uint32_t nanoseconds;
+};
+
+/* Time synchronisation tools */
+extern event_source_t measurements_pps_evt;
+extern volatile uint32_t *const measurements_dimiseconds;
 
 #endif

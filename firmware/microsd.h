@@ -1,5 +1,5 @@
-#ifndef MICROSD_H
-#define MICROSD_H
+#ifndef LINETIME_MICROSD_H
+#define LINETIME_MICROSD_H
 
 #include <stdint.h>
 

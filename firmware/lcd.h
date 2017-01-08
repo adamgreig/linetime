@@ -1,18 +1,18 @@
-#ifndef LCD_H
-#define LCD_H
+#ifndef LINETIME_LCD_H
+#define LINETIME_LCD_H
 
 /* Turn on the LCD, configuring the ILI9342 and starting the LTDC. */
 void lcd_init(void);
 
 /* Framebuf to write into. Will be updated each frame, so don't cache the
- * value. Only write immediately after the semaphore is signalled, within 20ms.
+ * value. Only write immediately after the event is signalled, within 15ms.
  */
 extern uint8_t (*lcd_framebuf)[320];
 
-/* Semaphore that is signalled at the end of each frame, after the display
- * buffers have been rotated. You have about 20ms to draw into the framebuffer.
+/* Event that is broadcast at the end of each frame, after the display
+ * buffers have been rotated. You have about 15ms to draw into the framebuffer.
  */
-extern binary_semaphore_t lcd_frame_bs;
+extern event_source_t lcd_frame_evt;
 
 /* Colours in the lookup table */
 #define LCD_BLACK   (0)

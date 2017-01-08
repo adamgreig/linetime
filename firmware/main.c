@@ -11,10 +11,17 @@
 #include "lcd.h"
 #include "speaker.h"
 #include "gui.h"
+#include "network.h"
 
 
 int main(void)
 {
+    /* Everything we put in SRAM1+SRAM2 will need to be DMA'd,
+     * and everything else gets put in DTCM, so there's really
+     * no point having the cache turned on.
+     */
+    SCB_DisableDCache();
+
     halInit();
     chSysInit();
 
@@ -22,15 +29,21 @@ int main(void)
     ublox_init(&SD2);
 
     /* Set up the CS2100 to provide the 26MHz GPS-disciplined clock */
-    /*cs2100_configure(&I2CD3);*/
+    cs2100_configure(&I2CD3);
 
     /* Swap the PLL to run off the 26MHz clock */
-    /*cs2100_set_pll();*/
+    cs2100_set_pll();
 
     /* Turn on the screen and speaker */
-    lcd_init();
-    speaker_init();
-    gui_init();
+    /*lcd_init();*/
+    /*speaker_init();*/
+
+    /* Start GUI */
+    /*gui_init();*/
+
+    /* Start up the network */
+    network_init();
+    chThdSleep(TIME_INFINITE);
 
     /* Start up the µSD card, ready for logging */
     microsd_init();
@@ -40,17 +53,20 @@ int main(void)
         palSetLine(LINE_LED_YLW);
         chThdSleepMilliseconds(500);
         palClearLine(LINE_LED_YLW);
-        chBSemWaitTimeout(&ublox_last_utc_bs, MS2ST(500));
+        chThdSleepMilliseconds(500);
     }
 
     /* Start taking mains measurements */
     measurements_init();
 
+    /* Blink green LED at 1PPS, locked to top of second if possible */
+    event_listener_t pps_listener;
+    chEvtRegister(&measurements_pps_evt, &pps_listener, 0);
     while(true) {
+        chEvtWaitOneTimeout(EVENT_MASK(0), MS2ST(2000));
         palSetLine(LINE_LED_GRN);
-        chThdSleepMilliseconds(500);
+        chThdSleepMilliseconds(200);
         palClearLine(LINE_LED_GRN);
-        chThdSleepMilliseconds(500);
     }
 }
 

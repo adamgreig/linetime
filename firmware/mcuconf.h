@@ -88,7 +88,7 @@
 #define STM32_CECSEL                        STM32_CECSEL_LSE
 #define STM32_CK48MSEL                      STM32_CK48MSEL_PLL
 #define STM32_SDMMCSEL                      STM32_SDMMCSEL_PLL48CLK
-#define STM32_SRAM2_NOCACHE                 TRUE
+#define STM32_SRAM2_NOCACHE                 FALSE
 
 /*
  * ADC driver system settings.
@@ -156,7 +156,7 @@
 #define STM32_GPT_USE_TIM4                  FALSE
 #define STM32_GPT_USE_TIM5                  FALSE
 #define STM32_GPT_USE_TIM6                  TRUE
-#define STM32_GPT_USE_TIM7                  FALSE
+#define STM32_GPT_USE_TIM7                  TRUE
 #define STM32_GPT_USE_TIM8                  FALSE
 #define STM32_GPT_USE_TIM9                  TRUE
 #define STM32_GPT_USE_TIM11                 FALSE
@@ -222,9 +222,9 @@
 /*
  * MAC driver system settings.
  */
-#define STM32_MAC_TRANSMIT_BUFFERS          2
-#define STM32_MAC_RECEIVE_BUFFERS           4
-#define STM32_MAC_BUFFERS_SIZE              1522
+#define STM32_MAC_TRANSMIT_BUFFERS          1
+#define STM32_MAC_RECEIVE_BUFFERS           1
+#define STM32_MAC_BUFFERS_SIZE              1536
 #define STM32_MAC_PHY_TIMEOUT               100
 #define STM32_MAC_ETH1_CHANGE_PHY_STATE     TRUE
 #define STM32_MAC_ETH1_IRQ_PRIORITY         13

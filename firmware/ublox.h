@@ -3,8 +3,8 @@
  * 2014, 2016 Adam Greig
  */
 
-#ifndef UBLOX_H
-#define UBLOX_H
+#ifndef LINETIME_UBLOX_H
+#define LINETIME_UBLOX_H
 
 #include "ch.h"
 #include "hal.h"
@@ -19,7 +19,7 @@ struct ublox_utc {
 };
 
 /* Signals when a new UTC reading is received, and its value. */
-extern binary_semaphore_t ublox_last_utc_bs;
+extern event_source_t ublox_last_utc_evt;
 extern struct ublox_utc ublox_last_utc;
 
-#endif /* UBLOX_H */
+#endif
