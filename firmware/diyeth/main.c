@@ -14,6 +14,9 @@ void smi_write(uint32_t reg, uint32_t val);
 void send_packet(void* packet, size_t len);
 void read_packet(void);
 void release_packet(void);
+void send_ping_reply(void);
+void send_arp_reply(void);
+void send_udp_reply(void);
 
 struct mac_header {
     uint8_t dst[6], src[6];
@@ -46,6 +49,23 @@ struct arp_packet arp_announce = {
     .spa = {192, 168, 2, 202},
     .tha = {0, 0, 0, 0, 0, 0},
     .tpa = {192, 168, 2, 202},
+};
+
+struct arp_packet arp_reply = {
+    .mac_header = {
+        .dst = {0, 0, 0, 0, 0, 0},
+        .src = {0x56, 0x54, 0x9f, 0x08, 0x87, 0x1d},
+        .ethertype = 0x0608,
+    },
+    .htype = 0x0100,
+    .ptype = 0x0008,
+    .hlen = 6,
+    .plen = 4,
+    .oper = 0x0200,
+    .sha = {0x56, 0x54, 0x9f, 0x08, 0x87, 0x1d},
+    .spa = {192, 168, 2, 202},
+    .tha = {0, 0, 0, 0, 0, 0},
+    .tpa = {0, 0, 0, 0},
 };
 
 struct ip4_header {
@@ -106,14 +126,14 @@ struct icmp_ping ping_response = {
     .payload = {0}, /* filled in at runtime */
 };
 
-struct hello_msg {
+struct udp_ping {
     struct mac_header mac_header;
     struct ip4_header ip4_header;
     struct udp_header udp_header;
-    uint8_t data[48];
+    uint32_t data;
 } __attribute__((packed));
 
-struct hello_msg hello = {
+struct udp_ping udp_response = {
     .mac_header = {
         .dst = {0x60, 0xa4, 0x4c, 0x5f, 0x45, 0x6f},
         .src = {0x56, 0x54, 0x9f, 0x08, 0x87, 0x1d},
@@ -137,7 +157,7 @@ struct hello_msg hello = {
         .len = ((56 & 0x00FF) << 8) | ((56 & 0xFF00) >> 8),
         .crc = 0 /* filled in by the stm32 */,
     },
-    .data = "hello linetime!",
+    .data = 0,
 };
 
 
@@ -292,6 +312,7 @@ void mac_init()
 
     /* Set operation mode and start DMA */
     ETH->DMAOMR = ETH_DMAOMR_RSF | ETH_DMAOMR_TSF |
+                  /*ETH_DMAOMR_FEF | ETH_DMAOMR_FUGF |*/
                   ETH_DMAOMR_ST | ETH_DMAOMR_SR;
 
 }
@@ -422,6 +443,44 @@ void release_packet()
     }
 }
 
+void send_ping_reply()
+{
+    struct icmp_ping* ping = (struct icmp_ping*)rdptr->rdes2;
+    ping_response.icmp_header.data = ping->icmp_header.data;
+    size_t len = ping->ip4_header.len;
+    ping_response.ip4_header.len = len;
+    len = ((len & 0x00FF) << 8) | ((len & 0xFF00) >> 8);
+    memcpy(ping_response.payload, ping->payload, len - 28);
+    release_packet();
+    send_packet(&ping_response, len + sizeof(struct mac_header));
+}
+
+void send_arp_reply()
+{
+    struct arp_packet* request = (struct arp_packet*)rdptr->rdes2;
+    memcpy(&arp_reply.mac_header.dst, &request->mac_header.src, 6);
+    memcpy(&arp_reply.tha, &request->sha, 6);
+    memcpy(&arp_reply.tpa, &request->spa, 4);
+    release_packet();
+    send_packet(&arp_reply, sizeof(struct arp_packet));
+}
+
+void send_udp_reply()
+{
+    struct udp_ping* ping = (struct udp_ping*)rdptr->rdes2;
+    memcpy(&udp_response.mac_header.dst, &ping->mac_header.src, 6);
+    memcpy(&udp_response.ip4_header.dst, &ping->ip4_header.src, 4);
+    udp_response.ip4_header.len = ping->ip4_header.len;
+    udp_response.udp_header.src_port = ping->udp_header.src_port;
+    udp_response.udp_header.dst_port = ping->udp_header.dst_port;
+    udp_response.udp_header.len = ping->udp_header.len;
+    udp_response.data = ping->data;
+    size_t len = ping->ip4_header.len;
+    len = ((len&0xFF00)>>8)|((len&0x00FF)<<8);
+    release_packet();
+    send_packet(&udp_response, len + sizeof(struct mac_header));
+}
+
 int main(void)
 {
     SCB_DisableDCache();
@@ -442,30 +501,27 @@ int main(void)
 
     while(true) {
         read_packet();
-        struct icmp_ping* ping = (struct icmp_ping*)rdptr->rdes2;
 
-        if(ping->mac_header.ethertype != 0x0008) {
+        uint16_t ethertype = ((struct mac_header*)rdptr->rdes2)->ethertype;
+
+        if(ethertype == 0x0608) {
+            send_arp_reply();
+        } else if(ethertype == 0x0008) {
+            struct icmp_ping* iping = (struct icmp_ping*)rdptr->rdes2;
+            struct udp_ping* uping = (struct udp_ping*)rdptr->rdes2;
+            if(iping->ip4_header.proto == 1 &&
+               iping->icmp_header.type == 8 &&
+               iping->icmp_header.code == 0)
+            {
+                send_ping_reply();
+            } else if(uping->ip4_header.proto == 17) {
+                send_udp_reply();
+            } else {
+                release_packet();
+            }
+        } else {
             release_packet();
-            continue;
         }
-
-        if(ping->ip4_header.proto != 1) {
-            release_packet();
-            continue;
-        }
-
-        if(ping->icmp_header.type != 8 || ping->icmp_header.code != 0) {
-            release_packet();
-            continue;
-        }
-
-        ping_response.icmp_header.data = ping->icmp_header.data;
-        size_t len = ping->ip4_header.len;
-        ping_response.ip4_header.len = len;
-        len = ((len & 0x00FF) << 8) | ((len & 0xFF00) >> 8);
-        memcpy(ping_response.payload, ping->payload, len - 28);
-        release_packet();
-        send_packet(&ping_response, len + sizeof(struct mac_header));
     }
 }
 
