@@ -2,6 +2,12 @@
 
 #include "hal.h"
 
+#define MANAGE_CACHE 0
+#define DISABLE_CACHE 0
+#define USE_MPU 1
+#define MAC_ALLOW_ERRORS 1
+#define APP_CHECK_PACKETS 1
+
 void gpio_init(void);
 void rcc_reset(void);
 void rcc_start(void);
@@ -16,7 +22,14 @@ void read_packet(void);
 void release_packet(void);
 void send_ping_reply(void);
 void send_arp_reply(void);
-void send_udp_reply(void);
+void send_udp_reply(uint32_t val);
+void check_packet_error(void);
+
+static uint32_t rxcount;
+static uint32_t pingcount;
+
+#define htons(x) (((x&0xFF00)>>8)|((x&0x00FF)<<8))
+#define ntohs(x) htons(x)
 
 struct mac_header {
     uint8_t dst[6], src[6];
@@ -142,7 +155,7 @@ struct udp_ping udp_response = {
     .ip4_header = {
         .vers_ihl = (4<<4) | 5,
         .dscp_ecn = 0,
-        .len = ((76 & 0x00FF) << 8) | ((76 & 0xFF00) >> 8),
+        .len = htons(46),
         .id = 0,
         .flags_frag = (1<<6),
         .ttl = 255,
@@ -152,9 +165,9 @@ struct udp_ping udp_response = {
         .dst = {192, 168, 2, 2},
     },
     .udp_header = {
-        .src_port = 0x1234,
-        .dst_port = 0x3412,
-        .len = ((56 & 0x00FF) << 8) | ((56 & 0xFF00) >> 8),
+        .src_port = 0x8223,
+        .dst_port = 0x8223,
+        .len = htons(12),
         .crc = 0 /* filled in by the stm32 */,
     },
     .data = 0,
@@ -162,19 +175,20 @@ struct udp_ping udp_response = {
 
 
 /* Transmit and receive descriptors and buffers */
+uint32_t tbuf[2][2048/4] __attribute__((aligned(4))) __attribute__((section(".eth")));
+uint32_t rbuf[2][2048/4] __attribute__((aligned(4))) __attribute__((section(".eth")));
+
 struct tdes {
     volatile uint32_t tdes0, tdes1, tdes2, tdes3;
 };
 struct tdes td[2] __attribute__((aligned(4))) __attribute__((section(".eth")));
 struct tdes *tdptr;
-uint32_t tbuf[2][2048/4] __attribute__((aligned(4))) __attribute__((section(".eth")));
 
 struct rdes {
     volatile uint32_t rdes0, rdes1, rdes2, rdes3;
 };
 struct rdes rd[2] __attribute__((aligned(4))) __attribute__((section(".eth")));
 struct rdes *rdptr;
-uint32_t rbuf[2][2048/4] __attribute__((aligned(4))) __attribute__((section(".eth")));
 
 
 void gpio_init()
@@ -188,6 +202,7 @@ void gpio_init()
     /*
      * All AF:
      * GPIOA 1, 2, 7
+     * GPIOB 13
      * GPIOC 1, 4, 5
      * GPIOG 11, 13, 14
      *
@@ -197,14 +212,15 @@ void gpio_init()
     GPIOA->MODER |= GPIO_MODER_MODER1_1 |
                     GPIO_MODER_MODER2_1 |
                     GPIO_MODER_MODER7_1;
+    GPIOB->MODER |= GPIO_MODER_MODER7_0 |
+                    GPIO_MODER_MODER13_1|
+                    GPIO_MODER_MODER15_0;
     GPIOC->MODER |= GPIO_MODER_MODER1_1 |
                     GPIO_MODER_MODER4_1 |
                     GPIO_MODER_MODER5_1;
     GPIOG->MODER |= GPIO_MODER_MODER11_1 |
                     GPIO_MODER_MODER13_1 |
                     GPIO_MODER_MODER14_1;
-    GPIOB->MODER |= GPIO_MODER_MODER7_0 |
-                    GPIO_MODER_MODER15_0;
 
     /* All push-pull, no need to change anything in OTYPER */
 
@@ -212,20 +228,22 @@ void gpio_init()
     GPIOA->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR1_1 |
                       GPIO_OSPEEDER_OSPEEDR2_1 |
                       GPIO_OSPEEDER_OSPEEDR7_1;
+    GPIOB->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR7_1 |
+                      GPIO_OSPEEDER_OSPEEDR13_1|
+                      GPIO_OSPEEDER_OSPEEDR15_1;
     GPIOC->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR1_1 |
                       GPIO_OSPEEDER_OSPEEDR4_1 |
                       GPIO_OSPEEDER_OSPEEDR5_1;
     GPIOG->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR11_1 |
                       GPIO_OSPEEDER_OSPEEDR13_1 |
                       GPIO_OSPEEDER_OSPEEDR14_1;
-    GPIOB->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR7_1 |
-                      GPIO_OSPEEDER_OSPEEDR15_1;
 
     /* All floating, no need to change anything in PUPDR */
     /* All outputting 0 to start, no change in ODR */
 
     /* Set AF11 */
     GPIOA->AFRL |= (11<<4)  | (11<<8)  | (11<<28);
+    GPIOB->AFRH |= (11<<20);
     GPIOC->AFRL |= (11<<4)  | (11<<16) | (11<<20);
     GPIOG->AFRH |= (11<<12) | (11<<20) | (11<<24);
 }
@@ -277,6 +295,9 @@ void mac_init()
      * We'll set link speed and duplex after the link comes up.
      */
     ETH->MACCR = ETH_MACCR_RE | ETH_MACCR_TE;
+#if MAC_ALLOW_ERRORS
+    ETH->MACFFR = ETH_MACFFR_RA;
+#endif
 
     /* Set up DMA descriptors in chain mode */
     td[0].tdes0 = (1<<20);
@@ -297,6 +318,10 @@ void mac_init()
     rd[1].rdes3 = (intptr_t)&rd[0];
     rdptr = &rd[0];
     tdptr = &td[0];
+    __DMB();
+#if MANAGE_CACHE
+    SCB_CleanDCache();
+#endif
     ETH->DMATDLAR = (intptr_t)&td[0];
     ETH->DMARDLAR = (intptr_t)&rd[0];
 
@@ -312,9 +337,10 @@ void mac_init()
 
     /* Set operation mode and start DMA */
     ETH->DMAOMR = ETH_DMAOMR_RSF | ETH_DMAOMR_TSF |
-                  /*ETH_DMAOMR_FEF | ETH_DMAOMR_FUGF |*/
+#if MAC_ALLOW_ERRORS
+                  ETH_DMAOMR_FEF |
+#endif
                   ETH_DMAOMR_ST | ETH_DMAOMR_SR;
-
 }
 
 uint32_t smi_read(uint32_t reg)
@@ -355,6 +381,10 @@ void phy_reset()
     for(volatile uint32_t i=0; i<1920000; i++) asm("nop");
     GPIOB->BSRR.H.set = (1<<15);
     for(volatile uint32_t i=0; i<1920000; i++) asm("nop");
+
+    /* Software reset */
+    smi_write(0x00, (1<<15));
+    while(smi_read(0x00) & (1<<15)) {}
 }
 
 void phy_init()
@@ -369,6 +399,8 @@ bool phy_poll_link()
     bsr = smi_read(0x01);
     bcr = smi_read(0x00);
     lpa = smi_read(0x05);
+    (void)bcr;
+    (void)lpa;
 
     /* No link if no auto negotiate, what century even is this */
     if(!(bcr & (1<<12))) {
@@ -405,6 +437,10 @@ void send_packet(void* packet, size_t len)
     /* Wait for a descriptor to become available */
     while(tdptr->tdes0 & (1<<31)) {
         tdptr = (struct tdes*)tdptr->tdes3;
+        __DMB();
+#if MANAGE_CACHE
+        SCB_InvalidateDCache();
+#endif
     }
 
     /* Copy packet into descriptor */
@@ -418,6 +454,11 @@ void send_packet(void* packet, size_t len)
     tdptr->tdes0 = (1<<31) | (1<<30) | (1<<29) |
                    (1<<28) | (3<<22) | (1<<20);
 
+    __DMB();
+#if MANAGE_CACHE
+    SCB_CleanDCache();
+#endif
+
     /* If DMA has stopped, tell it to restart */
     if((ETH->DMASR & ETH_DMASR_TPS) == ETH_DMASR_TPS_Suspended) {
         ETH->DMASR = ETH_DMASR_TBUS;
@@ -430,12 +471,23 @@ void read_packet()
     /* Wait for a descriptor to become available */
     while(rdptr->rdes0 & (1<<31)) {
         rdptr = (struct rdes*)rdptr->rdes3;
+
+    __DMB();
+#if MANAGE_CACHE
+        SCB_CleanInvalidateDCache();
+#endif
+
     }
 }
 
 void release_packet()
 {
     rdptr->rdes0 = (1<<31);
+
+    __DMB();
+#if MANAGE_CACHE
+    SCB_CleanDCache();
+#endif
 
     if((ETH->DMASR & ETH_DMASR_RPS) == ETH_DMASR_RPS_Suspended) {
         ETH->DMASR = ETH_DMASR_RBUS;
@@ -447,9 +499,8 @@ void send_ping_reply()
 {
     struct icmp_ping* ping = (struct icmp_ping*)rdptr->rdes2;
     ping_response.icmp_header.data = ping->icmp_header.data;
-    size_t len = ping->ip4_header.len;
-    ping_response.ip4_header.len = len;
-    len = ((len & 0x00FF) << 8) | ((len & 0xFF00) >> 8);
+    ping_response.ip4_header.len = ping->ip4_header.len;
+    size_t len = ntohs(ping->ip4_header.len);
     memcpy(ping_response.payload, ping->payload, len - 28);
     release_packet();
     send_packet(&ping_response, len + sizeof(struct mac_header));
@@ -465,8 +516,10 @@ void send_arp_reply()
     send_packet(&arp_reply, sizeof(struct arp_packet));
 }
 
-void send_udp_reply()
+void send_udp_reply(uint32_t val)
 {
+    (void)val;
+#if 0
     struct udp_ping* ping = (struct udp_ping*)rdptr->rdes2;
     memcpy(&udp_response.mac_header.dst, &ping->mac_header.src, 6);
     memcpy(&udp_response.ip4_header.dst, &ping->ip4_header.src, 4);
@@ -475,15 +528,49 @@ void send_udp_reply()
     udp_response.udp_header.dst_port = ping->udp_header.dst_port;
     udp_response.udp_header.len = ping->udp_header.len;
     udp_response.data = ping->data;
-    size_t len = ping->ip4_header.len;
-    len = ((len&0xFF00)>>8)|((len&0x00FF)<<8);
+#else
+#if 0
+    udp_response.data = val;
+#else
+    struct udp_ping* ping = (struct udp_ping*)rdptr->rdes2;
+    udp_response.data = ping->data;
+    (void)val;
+#endif
+#endif
     release_packet();
-    send_packet(&udp_response, len + sizeof(struct mac_header));
+    send_packet(&udp_response, sizeof(struct udp_ping));
+}
+
+void check_packet_error(void)
+{
+    /* check crc error */
+    if(rdptr->rdes0 & (1<<1)) {
+        asm("nop");
+    } else {
+        asm("nop");
+    }
 }
 
 int main(void)
 {
+#if USE_MPU
+    MPU->RNR = 7;
+    MPU->RBAR = 0x2007C000;
+    MPU->RASR =
+        (3<<24) |       /* (AP) Access permission: RW, RW */
+        (4<<19) |       /* (TEX) outer cache policy: no cache */
+        (0<<16) |       /* (B) inner cache policy (1/2): no cache */
+        (0<<17) |       /* (C) inner cache policy (2/2): no cache */
+        (1<<18) |       /* (S) shared */
+        (13<<1) |       /* (SIZE) 2^(13+1) = 2^14 = 16K bytes */
+        (1<<0);         /* (ENABLE) */
+    MPU->CTRL = (1<<2) | (1<<0);
+    SCB_CleanInvalidateDCache();
+#endif
+
+#if DISABLE_CACHE
     SCB_DisableDCache();
+#endif
 
     rcc_reset();
     rcc_start();
@@ -497,6 +584,8 @@ int main(void)
 
     while(phy_poll_link() == false) {}
 
+    rxcount = pingcount = 0;
+
     send_packet(&arp_announce, sizeof(arp_announce));
 
     while(true) {
@@ -509,13 +598,24 @@ int main(void)
         } else if(ethertype == 0x0008) {
             struct icmp_ping* iping = (struct icmp_ping*)rdptr->rdes2;
             struct udp_ping* uping = (struct udp_ping*)rdptr->rdes2;
-            if(iping->ip4_header.proto == 1 &&
-               iping->icmp_header.type == 8 &&
-               iping->icmp_header.code == 0)
+            if(iping->ip4_header.proto == 1
+#if APP_CHECK_PACKETS
+                && iping->icmp_header.type == 8
+                && iping->icmp_header.code == 0
+#endif
+               )
             {
+                pingcount++;
                 send_ping_reply();
-            } else if(uping->ip4_header.proto == 17) {
-                send_udp_reply();
+            } else if(uping->ip4_header.proto == 17
+#if APP_CHECK_PACKETS
+                       && uping->udp_header.dst_port == htons(9090)
+#endif
+                     )
+            {
+                rxcount++;
+                check_packet_error();
+                send_udp_reply(rxcount);
             } else {
                 release_packet();
             }

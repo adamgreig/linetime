@@ -78,7 +78,7 @@ REGION_ALIAS("MAIN_STACK_RAM", ram3);
 REGION_ALIAS("PROCESS_STACK_RAM", ram3);
 
 /* RAM region to be used for data segment.*/
-REGION_ALIAS("DATA_RAM", ram0);
+REGION_ALIAS("DATA_RAM", ram3);
 REGION_ALIAS("DATA_RAM_LMA", flash0);
 
 /* RAM region to be used for BSS segment.*/
@@ -98,7 +98,7 @@ INCLUDE rules_stacks.ld
 REGION_ALIAS("NOCACHE_RAM", ram3);
 
 /* RAM region to be used for eth segment.*/
-REGION_ALIAS("ETH_RAM", ram3);
+REGION_ALIAS("ETH_RAM", ram2);
 
 SECTIONS
 {
