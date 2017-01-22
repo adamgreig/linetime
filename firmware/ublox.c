@@ -917,6 +917,7 @@ static bool ublox_configure_tp5(void)
         UBX_CFG_TP5_FLAGS_ACTIVE                    |
         UBX_CFG_TP5_FLAGS_LOCK_GNSS_FREQ            |
         UBX_CFG_TP5_FLAGS_IS_FREQ                   |
+        UBX_CFG_TP5_FLAGS_ALIGN_TO_TOW              |
         UBX_CFG_TP5_FLAGS_POLARITY                  |
         UBX_CFG_TP5_FLAGS_GRID_UTC_GNSS_UTC);
 

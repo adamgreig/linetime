@@ -95,7 +95,7 @@ static void draw_clock(uint16_t cx, uint16_t cy, uint16_t r)
 
     /* Draw ticks on the hours */
     for(float theta = 0.0f; theta < M_PI/2.0f; theta += M_PI/6.0f) {
-        uint16_t len = theta == 0.0f ? 20 : 10;
+        uint16_t len = theta == 0.0f ? r/5 : r/10;
         uint16_t dx0 = (uint16_t)((r-len)*sinf(theta));
         uint16_t dx1 = (uint16_t)((r    )*sinf(theta));
         uint16_t dy0 = (uint16_t)((r-len)*cosf(theta));
@@ -148,6 +148,10 @@ static THD_FUNCTION(gui_thd, arg)
         chEvtWaitOne(EVENT_MASK(0));
         memset(lcd_framebuf, 0, 320*240);
         draw_clock(320/2, 240/2, 100);
+        draw_clock(30, 30, 20);
+        draw_clock(30, 210, 20);
+        draw_clock(290, 210, 20);
+        draw_clock(290, 30, 20);
 
         /* Slightly weird line-boldening technique.
          * Note we can't set any pixel ahead of where we're looking
@@ -158,6 +162,7 @@ static THD_FUNCTION(gui_thd, arg)
          *  | x
          *  v
          */
+#if 0
         for(size_t x=1; x<319; x++) {
             for(size_t y=1; y<239; y++) {
                 uint8_t p = lcd_framebuf[y][x];
@@ -169,6 +174,7 @@ static THD_FUNCTION(gui_thd, arg)
                 }
             }
         }
+#endif
     }
 }
 

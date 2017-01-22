@@ -13,7 +13,6 @@
 #include "gui.h"
 #include "network.h"
 
-
 int main(void)
 {
     /* Everything we put in SRAM1+SRAM2 will need to be DMA'd,
@@ -35,15 +34,14 @@ int main(void)
     cs2100_set_pll();
 
     /* Turn on the screen and speaker */
-    /*lcd_init();*/
-    /*speaker_init();*/
+    lcd_init();
+    speaker_init();
 
     /* Start GUI */
-    /*gui_init();*/
+    gui_init();
 
     /* Start up the network */
     network_init();
-    chThdSleep(TIME_INFINITE);
 
     /* Start up the µSD card, ready for logging */
     microsd_init();
@@ -75,4 +73,13 @@ int main(void)
  */
 void NMI_Handler(void) {
     NVIC_SystemReset();
+}
+
+/* Make hard faults give a useful stack trace in gdb */
+void **HARDFAULT_PSP;
+register void *stack_pointer asm("sp");
+void HardFault_Handler(void) {
+    asm("mrs %0, psp" : "=r"(HARDFAULT_PSP) : :);
+    stack_pointer = HARDFAULT_PSP;
+    while(1);
 }

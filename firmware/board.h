@@ -422,7 +422,7 @@
                                         PIN_OSPEED_HIGH(GPIOA_SWCLK) | \
                                         PIN_OSPEED_HIGH(GPIOA_MAINS_ZC))
 #define VAL_GPIOA_PUPDR                (PIN_PUPD_PULLUP(GPIOA_PIN0) | \
-                                        PIN_PUPD_PULLUP(GPIOA_RMII_REF_CLK) | \
+                                        PIN_PUPD_FLOATING(GPIOA_RMII_REF_CLK) | \
                                         PIN_PUPD_PULLUP(GPIOA_RMII_MDIO) | \
                                         PIN_PUPD_PULLUP(GPIOA_LCD_B5) | \
                                         PIN_PUPD_PULLUP(GPIOA_LCD_VSYNC) | \
@@ -656,11 +656,11 @@
                                         PIN_OSPEED_HIGH(GPIOC_PIN14) | \
                                         PIN_OSPEED_HIGH(GPIOC_PIN15))
 #define VAL_GPIOC_PUPDR                (PIN_PUPD_PULLUP(GPIOC_PIN0) | \
-                                        PIN_PUPD_PULLUP(GPIOC_RMII_MDC) | \
+                                        PIN_PUPD_FLOATING(GPIOC_RMII_MDC) | \
                                         PIN_PUPD_FLOATING(GPIOC_MAINS_WAVE) | \
                                         PIN_PUPD_FLOATING(GPIOC_MAINS_BIAS) | \
-                                        PIN_PUPD_PULLUP(GPIOC_RMII_RXD0) | \
-                                        PIN_PUPD_PULLUP(GPIOC_RMII_RXD1) | \
+                                        PIN_PUPD_FLOATING(GPIOC_RMII_RXD0) | \
+                                        PIN_PUPD_FLOATING(GPIOC_RMII_RXD1) | \
                                         PIN_PUPD_PULLUP(GPIOC_LCD_HSYNC) | \
                                         PIN_PUPD_PULLUP(GPIOC_LCD_G6) | \
                                         PIN_PUPD_PULLUP(GPIOC_USD_DAT0) | \
@@ -1134,10 +1134,10 @@
                                         PIN_PUPD_PULLUP(GPIOG_LCD_G7) | \
                                         PIN_PUPD_PULLUP(GPIOG_PIN9) | \
                                         PIN_PUPD_PULLUP(GPIOG_LCD_B2) | \
-                                        PIN_PUPD_PULLUP(GPIOG_RMII_TX_EN) | \
+                                        PIN_PUPD_FLOATING(GPIOG_RMII_TX_EN) | \
                                         PIN_PUPD_PULLUP(GPIOG_PIN12) | \
-                                        PIN_PUPD_PULLUP(GPIOG_RMII_TXD0) | \
-                                        PIN_PUPD_PULLUP(GPIOG_RMII_TXD1) | \
+                                        PIN_PUPD_FLOATING(GPIOG_RMII_TXD0) | \
+                                        PIN_PUPD_FLOATING(GPIOG_RMII_TXD1) | \
                                         PIN_PUPD_PULLUP(GPIOG_PIN15))
 #define VAL_GPIOG_ODR                  (PIN_OD_HIGH(GPIOG_PIN0) | \
                                         PIN_OD_HIGH(GPIOG_PIN1) | \
