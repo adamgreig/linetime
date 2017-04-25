@@ -191,7 +191,9 @@ void cs2100_set_pll(void)
     while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI);
 
     /* Turn off the PLL */
-    RCC->CR &= ~RCC_CR_PLLON;
+    RCC->CR &= ~(RCC_CR_PLLON | RCC_CR_PLLI2SON | RCC_CR_PLLSAION);
+    /* Wait for PLL to be off */
+    while(RCC->CFGR & RCC_CR_PLLRDY);
 
     /* Set PLL input to HSE, M to HSE/2=13, default N, P, Q. */
     RCC->PLLCFGR = STM32_PLLQ | STM32_PLLP | STM32_PLLN |
