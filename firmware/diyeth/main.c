@@ -439,7 +439,7 @@ void send_packet(void* packet, size_t len)
         tdptr = (struct tdes*)tdptr->tdes3;
         __DMB();
 #if MANAGE_CACHE
-        SCB_InvalidateDCache();
+        SCB_CleanInvalidateDCache();
 #endif
     }
 
