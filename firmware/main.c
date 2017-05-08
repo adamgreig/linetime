@@ -13,6 +13,8 @@
 #include "gui.h"
 #include "network.h"
 
+#include "mandelbrot.h"
+
 int main(void)
 {
     /* Everything we put in SRAM1+SRAM2 will need to be DMA'd,
@@ -38,6 +40,7 @@ int main(void)
     speaker_init();
 
     /* Start GUI */
+#if 0
     gui_init();
 
     /* Start up the network */
@@ -66,6 +69,18 @@ int main(void)
         chThdSleepMilliseconds(200);
         palClearLine(LINE_LED_GRN);
     }
+#else
+    while(true) {
+        int iters = 128;
+        for(float r=2.0f; r>0.00001f; r/=2.0f) {
+            mandelbrot_draw(-0.74529, 0.113075, r, iters);
+            uint8_t (*tmp)[320] = framebuf_front;
+            framebuf_front = framebuf_back;
+            framebuf_back = tmp;
+        }
+        chThdSleepMilliseconds(5000);
+    }
+#endif
 }
 
 /* The clock security system calls this if HSE goes away.

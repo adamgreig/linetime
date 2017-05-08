@@ -28,6 +28,7 @@ static void ltdc_layer1_init(void);
 /* Colour lookup table.
  * Each entry is KRGB, where K is the colour key.
  */
+#if 0
 static const uint32_t clut[] = {
     0x00000000,     /* Black    */
     0x01FFFFFF,     /* White    */
@@ -38,6 +39,20 @@ static const uint32_t clut[] = {
     0x06FF00FF,     /* Purple   */
     0x0700FFFF,     /* Cyan     */
 };
+static void clut_init(void) {}
+#else
+static uint32_t clut[256];
+static void clut_init(void)
+{
+    int r=0, g=0, b=0;
+    for(int i=0; i<256; i++) {
+        if(r<250) r += 3;
+        else if(g<250) g+= 3;
+        else b += 3;
+        clut[i] = (i<<24)|(r<<16)|(g<<8)|b;
+    }
+}
+#endif
 /*****************************************************************************/
 
 /******************************************************************* STRUCTS */
@@ -58,8 +73,8 @@ static uint8_t framebuf_1[240][320]
 static uint8_t framebuf_2[240][320]
     __attribute__((section(".sram1")))
     __attribute__((aligned(4)));
-static uint8_t (*framebuf_front)[320];
-static uint8_t (*framebuf_back)[320];
+uint8_t (*framebuf_front)[320];
+uint8_t (*framebuf_back)[320];
 /*****************************************************************************/
 
 /******************************************************* BACKLIGHT FUNCTIONS */
@@ -155,6 +170,7 @@ static void ltdc_layer1_init(void)
     LTDC_Layer1->CFBLNR = lines;
 
     /* Write the colour lookup table */
+    clut_init();
     for(size_t i=0; i<sizeof(clut)/4; i++) {
         LTDC_Layer1->CLUTWR = clut[i];
     }
@@ -167,6 +183,7 @@ static void ltdc_layer1_init(void)
 CH_IRQ_HANDLER(STM32_LTDC_EV_HANDLER) {
     CH_IRQ_PROLOGUE();
 
+#if 0
     /* Swap buffers around */
     if(framebuf_front == framebuf_1) {
         framebuf_front = framebuf_2;
@@ -177,6 +194,7 @@ CH_IRQ_HANDLER(STM32_LTDC_EV_HANDLER) {
     }
 
     lcd_framebuf = framebuf_back;
+#endif
 
     /* Set LTDC to new buffer and reload shadow registers */
     LTDC_Layer1->CFBAR = (intptr_t)framebuf_front;
@@ -329,7 +347,11 @@ void lcd_init()
 
     framebuf_front = framebuf_1;
     framebuf_back = framebuf_2;
+#if 1
     lcd_framebuf = framebuf_2;
+#else
+    lcd_framebuf = framebuf_1;
+#endif
 
     backlight_init();
     backlight_set(0);

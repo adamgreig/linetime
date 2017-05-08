@@ -1,6 +1,8 @@
 #ifndef LINETIME_LCD_H
 #define LINETIME_LCD_H
 
+#include "ch.h"
+
 /* Turn on the LCD, configuring the ILI9342 and starting the LTDC. */
 void lcd_init(void);
 
@@ -8,6 +10,8 @@ void lcd_init(void);
  * value. Only write immediately after the event is signalled, within 15ms.
  */
 extern uint8_t (*lcd_framebuf)[320];
+extern uint8_t (*framebuf_front)[320];
+extern uint8_t (*framebuf_back)[320];
 
 /* Event that is broadcast at the end of each frame, after the display
  * buffers have been rotated. You have about 15ms to draw into the framebuffer.

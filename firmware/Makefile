@@ -125,7 +125,7 @@ CSRC = $(STARTUPSRC) \
        $(LWSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        main.c ublox.c cs2100.c measurements.c microsd.c lcd.c speaker.c \
-       gui.c rom.c network.c
+       gui.c rom.c network.c mandelbrot.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
