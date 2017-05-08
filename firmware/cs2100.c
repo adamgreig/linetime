@@ -190,17 +190,17 @@ void cs2100_set_pll(void)
     /* Wait for HSI to be the system clock */
     while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI);
 
-    /* Turn off the PLL */
+    /* Turn off the PLLs */
     RCC->CR &= ~(RCC_CR_PLLON | RCC_CR_PLLI2SON | RCC_CR_PLLSAION);
-    /* Wait for PLL to be off */
-    while(RCC->CFGR & RCC_CR_PLLRDY);
+    /* Wait for PLLs to be off */
+    while((RCC->CR & RCC_CR_PLLRDY) || (RCC->CR & RCC_CR_PLLSAIRDY));
 
     /* Set PLL input to HSE, M to HSE/2=13, default N, P, Q. */
     RCC->PLLCFGR = STM32_PLLQ | STM32_PLLP | STM32_PLLN |
                    STM32_PLLSRC_HSE | 13;
 
-    /* Enable PLL */
-    RCC->CR |= RCC_CR_PLLON;
+    /* Enable PLLs */
+    RCC->CR |= RCC_CR_PLLON | RCC_CR_PLLSAION;
     /* Wait for voltage regulator to be stable */
     while((PWR->CSR1 & PWR_CSR1_VOSRDY) == 0);
     /* Note that overdrive mode should still be enabled from ChibiOS. */

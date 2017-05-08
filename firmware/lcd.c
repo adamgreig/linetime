@@ -258,7 +258,23 @@ static void ili9342_init()
     ili9342_write_index(0xB0);
         ili9342_write_data(0x40);
 
-    /* Display Function Control */
+    /* Display Waveform Cycle 1 (normal/full colour mode) */
+    ili9342_write_index(0xB1);
+        ili9342_write_data(0x00); /* DIVA = clock division ratio = 1/1 */
+        ili9342_write_data(0x10); /* RTNA = clocks per line      = 16  */
+
+    /* Display Function Control.
+     * The fouth parameter PCDIV is timing critical and very poorly documented.
+     * It appears to be a single 6-bit value for PCDIV, rather than the
+     * 4-bit PCDIVH and 4-bit PCDIVL that appears elsewhere in the
+     * documentation (from an older controller perhaps).
+     * Valid values don't seem to follow what you'd expect from the datasheet
+     * documentation either. Needs changing when you change DOTCLK, which is
+     * the TFT LCD clock, which is HSE /M *SAIN /SAIR /SAIDIVR.
+     * For DOTCLK=2.5MHz (SAIDIVR=16), use 0x02 to get ~28fps.
+     * For DOTCLK=5.0MHz (SAIDIVR= 8), use 0x01 to get ~56fps.
+     * If you get weird glitches or timing issues, try changing this first.
+     */
     ili9342_write_index(0xB6);
         ili9342_write_data(0x0A);
         ili9342_write_data(0x82);
